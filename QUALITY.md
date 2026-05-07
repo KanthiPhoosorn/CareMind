@@ -9,17 +9,18 @@
 
 We follow an iterative sprint-based SDLC tuned for a 5-week MVP push:
 
-| Phase | When | Output | Owner |
-|---|---|---|---|
-| **Requirements** | Continuous | Notion PRD + Sprint Board | PM / lead |
-| **Design** | Sprint kickoff | Architecture notes, schema, mocks | Lead dev |
-| **Implementation** | Mid-sprint | Code + tests in PR | Dev |
-| **Verification (QA)** | Pre-merge + pre-deploy | CI green, manual test passes | Dev + QA |
-| **Validation (UAT)** | Sprint 3 | Thai clinician feedback log | PM |
-| **Deployment** | Sprint 4 | Vercel + EAS builds, RLS audit | Lead dev |
-| **Maintenance** | Post-MVP | Bug intake, releases | Rotating oncall |
+| Phase                 | When                   | Output                            | Owner           |
+| --------------------- | ---------------------- | --------------------------------- | --------------- |
+| **Requirements**      | Continuous             | Notion PRD + Sprint Board         | PM / lead       |
+| **Design**            | Sprint kickoff         | Architecture notes, schema, mocks | Lead dev        |
+| **Implementation**    | Mid-sprint             | Code + tests in PR                | Dev             |
+| **Verification (QA)** | Pre-merge + pre-deploy | CI green, manual test passes      | Dev + QA        |
+| **Validation (UAT)**  | Sprint 3               | Thai clinician feedback log       | PM              |
+| **Deployment**        | Sprint 4               | Vercel + EAS builds, RLS audit    | Lead dev        |
+| **Maintenance**       | Post-MVP               | Bug intake, releases              | Rotating oncall |
 
 ### Sprint ceremonies
+
 - **Kickoff** (start of sprint): review goals, assign tasks, agree on Definition of Done.
 - **Daily standup** (15 min): yesterday / today / blockers. Update Sprint Board.
 - **Mid-sprint check-in**: cut scope if at risk.
@@ -32,7 +33,7 @@ We follow an iterative sprint-based SDLC tuned for a 5-week MVP push:
 A task is **not done** until:
 
 - [ ] Code reviewed by ≥1 teammate (no self-merges to `main`)
-- [ ] `pnpm lint` + `pnpm type-check` pass
+- [ ] `npm run lint` + `npm run type-check` pass
 - [ ] Unit tests written and passing
 - [ ] Integration tests added if the change touches DB / external APIs
 - [ ] Coverage ≥ 80% for **new** code (existing code grandfathered)
@@ -48,18 +49,19 @@ A task is **not done** until:
 
 ## 3. Test Stack (decision)
 
-| Layer | Tool | Why |
-|---|---|---|
-| Unit (web / shared / mobile) | **Vitest** | Fast, ESM-native, same config across workspaces |
-| Web E2E + visual regression | **Playwright** | Cross-browser, screenshot diffs, axe-core integration |
-| Mobile E2E | **Maestro** | YAML-based, far less flaky than Detox |
-| DB / RLS | **pgTAP** (or `vitest` + Supabase test project) | Verifies tenant isolation declaratively |
-| Accessibility | **axe-core** via Playwright | Automated WCAG checks per page |
-| Performance | **Lighthouse CI** | Core Web Vitals enforced as PR gate |
-| Security (deps) | **`npm audit`** + **Snyk** (free tier) | Dependency CVEs |
-| Type safety | **TypeScript strict** + `tsc --noEmit` in CI | Catches whole classes of bugs upstream |
+| Layer                        | Tool                                            | Why                                                   |
+| ---------------------------- | ----------------------------------------------- | ----------------------------------------------------- |
+| Unit (web / shared / mobile) | **Vitest**                                      | Fast, ESM-native, same config across workspaces       |
+| Web E2E + visual regression  | **Playwright**                                  | Cross-browser, screenshot diffs, axe-core integration |
+| Mobile E2E                   | **Maestro**                                     | YAML-based, far less flaky than Detox                 |
+| DB / RLS                     | **pgTAP** (or `vitest` + Supabase test project) | Verifies tenant isolation declaratively               |
+| Accessibility                | **axe-core** via Playwright                     | Automated WCAG checks per page                        |
+| Performance                  | **Lighthouse CI**                               | Core Web Vitals enforced as PR gate                   |
+| Security (deps)              | **`npm audit`** + **Snyk** (free tier)          | Dependency CVEs                                       |
+| Type safety                  | **TypeScript strict** + `tsc --noEmit` in CI    | Catches whole classes of bugs upstream                |
 
 ### Folder layout
+
 ```
 shared/__tests__/...          # unit + integration
 web/e2e/...                   # Playwright specs
@@ -71,13 +73,14 @@ supabase/tests/...            # pgTAP / SQL tests
 
 ## 4. Test Pyramid & Coverage
 
-| Level | Share of test count | Coverage target |
-|---|---|---|
-| Unit | ~70% | ≥ 80% on new code |
-| Integration (real Supabase test project) | ~20% | Each service module has at least one |
-| E2E (golden path per role) | ~10% | Doctor, Nurse, Pharmacist, Patient flows |
+| Level                                    | Share of test count | Coverage target                          |
+| ---------------------------------------- | ------------------- | ---------------------------------------- |
+| Unit                                     | ~70%                | ≥ 80% on new code                        |
+| Integration (real Supabase test project) | ~20%                | Each service module has at least one     |
+| E2E (golden path per role)               | ~10%                | Doctor, Nurse, Pharmacist, Patient flows |
 
 **Golden paths to cover end-to-end before MVP demo:**
+
 1. Doctor: login → patient list → patient detail → delta summary
 2. Nurse: login → ward list → log vitals → submit
 3. Pharmacist: login → Rx queue → drug interaction check → dispense
@@ -89,15 +92,15 @@ supabase/tests/...            # pgTAP / SQL tests
 
 These have higher priority than generic feature tests.
 
-| Test | What it proves | Severity if broken |
-|---|---|---|
-| **Multi-tenant RLS** | Hospital A user cannot read Hospital B records | **P0** — release blocker |
-| **PHI redaction in AI calls** | Patient name / AN stripped before Gemini call | **P0** |
-| **Audit log** | Every patient record view writes to `audit_log` | P1 |
-| **Vital sign flagging** | Out-of-range values raise correct severity | P1 |
-| **Drug interaction** | Known dangerous pairs trigger alert | P1 |
-| **Lab unit handling** | Values in mg/dL vs mmol/L don't get cross-compared | P1 |
-| **Thai text rendering** | All clinical terms render without tofu / clipping | P2 |
+| Test                          | What it proves                                     | Severity if broken       |
+| ----------------------------- | -------------------------------------------------- | ------------------------ |
+| **Multi-tenant RLS**          | Hospital A user cannot read Hospital B records     | **P0** — release blocker |
+| **PHI redaction in AI calls** | Patient name / AN stripped before Gemini call      | **P0**                   |
+| **Audit log**                 | Every patient record view writes to `audit_log`    | P1                       |
+| **Vital sign flagging**       | Out-of-range values raise correct severity         | P1                       |
+| **Drug interaction**          | Known dangerous pairs trigger alert                | P1                       |
+| **Lab unit handling**         | Values in mg/dL vs mmol/L don't get cross-compared | P1                       |
+| **Thai text rendering**       | All clinical terms render without tofu / clipping  | P2                       |
 
 ---
 
@@ -115,12 +118,12 @@ Manual promotion ──► production deploy ──► [smoke tests] ──► [
 
 ### What blocks each gate
 
-| Gate | Blocks if |
-|---|---|
-| PR open | lint, typecheck, or unit fails • coverage drops on new code |
-| Pre-merge | integration / RLS test fails • reviewer not approved |
-| Pre-deploy | E2E broken • a11y violations introduced • Lighthouse perf regress > 5 pts |
-| Pre-release | manual smoke test fails • multi-tenant audit reveals leakage |
+| Gate        | Blocks if                                                                 |
+| ----------- | ------------------------------------------------------------------------- |
+| PR open     | lint, typecheck, or unit fails • coverage drops on new code               |
+| Pre-merge   | integration / RLS test fails • reviewer not approved                      |
+| Pre-deploy  | E2E broken • a11y violations introduced • Lighthouse perf regress > 5 pts |
+| Pre-release | manual smoke test fails • multi-tenant audit reveals leakage              |
 
 ---
 
@@ -130,12 +133,12 @@ Manual promotion ──► production deploy ──► [smoke tests] ──► [
 
 **Severity:**
 
-| Level | Definition | SLA |
-|---|---|---|
-| **P0** | Demo / release blocker, data leak, security | Same day |
-| **P1** | Core feature broken, no workaround | This sprint |
-| **P2** | UX issue, has workaround | Next sprint |
-| **P3** | Polish, nice-to-have | Backlog |
+| Level  | Definition                                  | SLA         |
+| ------ | ------------------------------------------- | ----------- |
+| **P0** | Demo / release blocker, data leak, security | Same day    |
+| **P1** | Core feature broken, no workaround          | This sprint |
+| **P2** | UX issue, has workaround                    | Next sprint |
+| **P3** | Polish, nice-to-have                        | Backlog     |
 
 **Triage:** every Monday + ad-hoc for P0/P1.
 
@@ -157,16 +160,22 @@ Manual promotion ──► production deploy ──► [smoke tests] ──► [
 ## 9. Documentation Standards
 
 Every shared module or non-trivial decision gets:
+
 - A short JSDoc / docstring on exported functions
 - An ADR (Architecture Decision Record) in `docs/adr/NNN-title.md` for changes that lock in a direction (DB schema, AI provider, auth model)
 
 ADR template:
+
 ```markdown
 # ADR NNN — Title
+
 **Status:** proposed | accepted | superseded
 **Date:** YYYY-MM-DD
+
 ## Context
+
 ## Decision
+
 ## Consequences
 ```
 
@@ -175,8 +184,8 @@ ADR template:
 ## 10. Onboarding Checklist (new teammate)
 
 - [ ] Clone repo, copy `.env.example` → `.env.local`
-- [ ] Install: Node 18+, pnpm, Supabase CLI, Expo CLI
-- [ ] Run `pnpm install`
+- [ ] Install: Node 18+, npm, Supabase CLI, Expo CLI
+- [ ] Run `npm install`
 - [ ] Read this `QUALITY.md` and the `CHECKLIST.md`
 - [ ] Run the test suite locally — all green before first PR
 - [ ] Pair on a small task to learn the workflow

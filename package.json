@@ -2,14 +2,39 @@
   "name": "caremind",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["shared", "web", "mobile"],
+  "workspaces": [
+    "shared",
+    "web",
+    "mobile"
+  ],
   "scripts": {
     "dev:web": "npm run dev --workspace=web",
     "dev:mobile": "npm run start --workspace=mobile",
     "build:web": "npm run build --workspace=web",
     "build:shared": "npm run build --workspace=shared",
+    "sync": "git add . && git commit -m \"$npm_config_m\" && git push",
     "lint": "npm run lint --workspaces --if-present",
-    "type-check": "npm run type-check --workspaces --if-present"
+    "type-check": "npm run type-check --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .prettierignore",
+    "test": "vitest run",
+    "prepare": "husky"
   },
-  "engines": { "node": ">=18.0.0" }
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "next": "^16.2.5",
+    "prettier": "^3.8.3",
+    "vitest": "^4.1.5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md,css}": [
+      "prettier --write"
+    ]
+  }
 }

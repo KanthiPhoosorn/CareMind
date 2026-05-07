@@ -5,6 +5,7 @@
 The original `.json` files contained corrupted Excel data. I've created new `*_clean.json` files with proper healthcare data structures that you can use for the delta summary feature.
 
 ## Patient IDs in Sample Data
+
 - **an1**: Patient with respiratory infection (bronchitis/pneumonia)
 - **an2**: Patient with cardiac issues (atrial fibrillation)
 - **an3**: Patient with gastrointestinal issues (gastroenteritis)
@@ -14,35 +15,39 @@ The original `.json` files contained corrupted Excel data. I've created new `*_c
 ## 1. Doctor Notes (`doc_clean.json`)
 
 ### Structure:
+
 ```typescript
 {
-  patientId: string;           // e.g., "an1", "an2", "an3"
-  timestamp: string;           // ISO 8601 format
-  doctorId: string;            // e.g., "DR001"
-  doctorName: string;          // Full name with title
-  specialty: string;           // e.g., "Internal Medicine", "Cardiology"
-  chiefComplaint: string;      // Primary reason for visit
-  diagnosis: string;           // Current diagnosis
-  assessment: string;          // Doctor's detailed assessment
-  plan: string;                // Treatment plan
+  patientId: string; // e.g., "an1", "an2", "an3"
+  timestamp: string; // ISO 8601 format
+  doctorId: string; // e.g., "DR001"
+  doctorName: string; // Full name with title
+  specialty: string; // e.g., "Internal Medicine", "Cardiology"
+  chiefComplaint: string; // Primary reason for visit
+  diagnosis: string; // Current diagnosis
+  assessment: string; // Doctor's detailed assessment
+  plan: string; // Treatment plan
   vitalSigns: {
-    temperature: number;       // °F
-    bloodPressure: string;     // "systolic/diastolic"
-    heartRate: number;         // bpm
-    respiratoryRate: number;   // breaths/min
-    oxygenSaturation: number;  // %
-  };
-  notes: string;               // Additional clinical notes
+    temperature: number; // °F
+    bloodPressure: string; // "systolic/diastolic"
+    heartRate: number; // bpm
+    respiratoryRate: number; // breaths/min
+    oxygenSaturation: number; // %
+  }
+  notes: string; // Additional clinical notes
 }
 ```
 
 ### Sample Records:
+
 - Patient an1 has 2 visits (2/14 initial, 2/15 follow-up)
 - Patient an2 has 2 visits (2/14 initial AFib, 2/15 follow-up)
 - Patient an3 has 1 visit (2/13 gastroenteritis)
 
 ### Delta Summary Usage:
+
 Compare timestamps to show:
+
 - Changed diagnosis
 - Improved vital signs (temperature, heart rate, O2 saturation)
 - Updated treatment plans
@@ -52,33 +57,37 @@ Compare timestamps to show:
 ## 2. Medications/Drugs (`drug_clean.json`)
 
 ### Structure:
+
 ```typescript
 {
   patientId: string;
   timestamp: string;
-  orderId: string;             // e.g., "RX-2024-001"
-  medicationName: string;      // Drug name
-  dosage: string;              // e.g., "500mg", "25mg"
-  route: string;               // "Oral", "IV", etc.
-  frequency: string;           // e.g., "Once daily", "Twice daily"
-  duration: string;            // "5 days", "Ongoing"
-  quantity: number;            // Number of pills/doses
-  prescribedBy: string;        // Doctor name
-  indication: string;          // Why prescribed
-  instructions: string;        // Patient instructions
-  status: string;              // "Active", "Completed", "Discontinued"
-  startDate: string;           // YYYY-MM-DD
-  endDate: string | null;      // YYYY-MM-DD or null for ongoing
+  orderId: string; // e.g., "RX-2024-001"
+  medicationName: string; // Drug name
+  dosage: string; // e.g., "500mg", "25mg"
+  route: string; // "Oral", "IV", etc.
+  frequency: string; // e.g., "Once daily", "Twice daily"
+  duration: string; // "5 days", "Ongoing"
+  quantity: number; // Number of pills/doses
+  prescribedBy: string; // Doctor name
+  indication: string; // Why prescribed
+  instructions: string; // Patient instructions
+  status: string; // "Active", "Completed", "Discontinued"
+  startDate: string; // YYYY-MM-DD
+  endDate: string | null; // YYYY-MM-DD or null for ongoing
 }
 ```
 
 ### Sample Records:
+
 - Patient an1: Azithromycin (antibiotic), Guaifenesin (cough), Lisinopril (maintenance)
 - Patient an2: Metoprolol (rate control), Apixaban (anticoagulation)
 - Patient an3: Ondansetron (anti-nausea)
 
 ### Delta Summary Usage:
+
 Show:
+
 - New medications started
 - Dose changes (an2: Metoprolol 25mg → 50mg)
 - Medications completed
@@ -89,6 +98,7 @@ Show:
 ## 3. Lab Results (`lab_clean.json`)
 
 ### Structure:
+
 ```typescript
 {
   patientId: string;
@@ -111,12 +121,15 @@ Show:
 ```
 
 ### Sample Records:
+
 - Patient an1: CBC (WBC high → normalized), BMP (normal)
 - Patient an2: Cardiac enzymes, Coagulation panel, Thyroid tests
 - Patient an3: Stool culture (pending)
 
 ### Delta Summary Usage:
+
 Show:
+
 - New lab results available
 - Values that changed from abnormal to normal (an1: WBC 12.5 → 9.8)
 - New abnormal findings
@@ -127,6 +140,7 @@ Show:
 ## 4. Nurse Vitals & Tasks (`nurse_clean.json`)
 
 ### Structure:
+
 ```typescript
 {
   patientId: string;
@@ -151,12 +165,15 @@ Show:
 ```
 
 ### Sample Records:
+
 - Patient an1: Multiple vital sign checks showing improvement
 - Patient an2: Vital signs with heart rate monitoring for AFib
 - Patient an3: Vital signs + intake/output monitoring
 
 ### Delta Summary Usage:
+
 Show:
+
 - Vital sign trends (improving or worsening)
 - Medications administered
 - Nursing assessments and interventions
@@ -167,6 +184,7 @@ Show:
 ## 5. X-Ray/Imaging (`xray_clean.json`)
 
 ### Structure:
+
 ```typescript
 {
   patientId: string;
@@ -189,12 +207,15 @@ Show:
 ```
 
 ### Sample Records:
+
 - Patient an1: Initial chest X-ray (pneumonia) + follow-up (improving)
 - Patient an2: Chest X-ray (cardiomegaly)
 - Patient an3: Abdominal X-ray (normal)
 
 ### Delta Summary Usage:
+
 Show:
+
 - New imaging reports available
 - Comparison between serial studies
 - Resolution or progression of findings
@@ -252,6 +273,7 @@ function generateDeltaSummary(patientId: string, startDate: Date, endDate: Date)
 ## File Locations
 
 All clean files are in: `sample_data/`
+
 - `doc_clean.json` - Doctor notes
 - `drug_clean.json` - Medications
 - `lab_clean.json` - Lab results

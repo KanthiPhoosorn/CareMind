@@ -16,7 +16,9 @@ export async function askGemini(prompt: string): Promise<string> {
       if (!res.ok) continue;
       const data = await res.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    } catch { continue; }
+    } catch {
+      continue;
+    }
   }
   throw new Error('All Gemini models failed');
 }
