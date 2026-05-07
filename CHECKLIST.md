@@ -25,8 +25,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - [x] Workspaces + TS strict + path alias `@caremind/shared`
 - [x] Tailwind: role + severity colors wired
 - [x] GitHub repo created + initial push (https://github.com/KanthiPhoosorn/CareMind)
-- [x] Branch protection on `main` (require PR + review + green CI)
-- [x] CI: lint + `tsc --noEmit` + format check + build on PR (GitHub Actions)
+- [x] Branch protection on `main` (PR-required, 0 reviews, no required checks — solo-dev profile; tighten when 2nd contributor joins)
+- [x] ~~CI on PR (GitHub Actions)~~ → replaced with local husky gates: pre-commit runs prettier+eslint via lint-staged; pre-push runs `npm run type-check`
 - [x] `README.md` with setup steps
 - [x] `CONVENTIONS.md`
 
@@ -61,8 +61,9 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - [x] Playwright installed in `web/e2e/` + smoke test (loads home)
 - [x] Maestro installed in `mobile/e2e/` + smoke flow (launches app)
 - [x] ESLint + Prettier configs (extending Next.js + Expo presets)
-- [x] husky + lint-staged for pre-commit (lint + format staged files)
-- [x] GitHub Actions PR workflow: lint + `tsc --noEmit` + format check + build + unit tests
+- [x] husky + lint-staged for pre-commit (prettier --write all; eslint --fix on web/\*\* TS/JS)
+- [x] husky pre-push hook runs `npm run type-check` across all workspaces
+- [ ] ~~GitHub Actions PR workflow~~ — dropped; reintroduce when team expands (see commit `88cb7d0`)
 - [x] PR template + Issue templates (bug / feature / decision) in `.github/`
 - [x] `CODEOWNERS` file
 - [x] `docs/adr/` directory + ADR template
