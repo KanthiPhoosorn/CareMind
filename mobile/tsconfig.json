@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@caremind/shared": ["../shared/src"],
+      "@caremind/shared/*": ["../shared/src/*"]
+    }
+  }
+}

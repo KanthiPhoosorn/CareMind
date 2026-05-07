@@ -1,0 +1,6 @@
+[project]
+id = "caremind"
+
+[db]
+port = 54322
+major_version = 15
