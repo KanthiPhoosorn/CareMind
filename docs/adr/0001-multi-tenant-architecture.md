@@ -23,15 +23,18 @@ Adopt **shared-database, row-scoped multi-tenancy** with `hospital_id` as the te
 ## Consequences
 
 **Positive**
+
 - Hospitals scale independently; onboarding a new hospital is a row insert
 - Standard Postgres RLS provides defense-in-depth; misconfigured app code still cannot leak across tenants
 - Single-database operational simplicity (one Supabase project, one schema)
 
 **Negative**
+
 - All queries pay an extra join cost via the helper function (mitigated by index on `profiles(id)` and `patients(hospital_id)`)
 - Future cross-hospital analytics require a privileged service role bypassing RLS
 
 **Follow-up work**
+
 - Migration `00002_multi_tenant.sql` to add the table, columns, function, and revised policies
 - Seed script must insert one hospital before any patient
 - **CRITICAL** pgTAP test: hospital A user cannot read hospital B records — required before any production deploy
