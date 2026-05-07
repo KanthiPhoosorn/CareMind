@@ -1,0 +1,64 @@
+name: "🤔 Decision"
+description: Record an architectural or product decision that needs team input.
+title: "[Decision] "
+labels: ["decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose and discuss a decision that affects the
+        project's architecture, technology choices, or product direction.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What is the background? What problem or question triggered this decision?
+      placeholder: "We need to decide whether to use cloud Supabase or local for development..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options Considered
+      description: List the options with brief pros/cons for each.
+      placeholder: |
+        **Option A — Cloud Supabase**
+        - ✅ No local setup required
+        - ❌ Costs money, shared state
+
+        **Option B — Local Supabase**
+        - ✅ Free, isolated
+        - ❌ Docker required
+    validations:
+      required: true
+
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommendation
+      description: Which option do you recommend and why?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How soon does this need to be resolved?
+      options:
+        - "Blocking current sprint"
+        - "Needed before next sprint"
+        - "Can defer"
+    validations:
+      required: true
+
+  - type: textarea
+    id: stakeholders
+    attributes:
+      label: Stakeholders
+      description: Who should weigh in on this decision?
+      placeholder: "@KanthiPhoosorn"
+    validations:
+      required: false
