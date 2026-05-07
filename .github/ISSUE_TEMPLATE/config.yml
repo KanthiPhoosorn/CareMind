@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Architecture decision
+    url: https://github.com/KanthiPhoosorn/CareMind/blob/main/docs/adr/template.md
+    about: For decisions that lock in a direction, copy the ADR template into a PR instead of opening an issue.

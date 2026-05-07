@@ -1,0 +1,4 @@
+appId: com.caremind.app
+---
+- launchApp
+- assertVisible: "Sign In"

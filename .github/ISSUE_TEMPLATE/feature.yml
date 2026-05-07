@@ -1,0 +1,49 @@
+name: Feature request
+description: New capability or enhancement
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: dropdown
+    id: role
+    attributes:
+      label: Primary role
+      options:
+        - Doctor
+        - Nurse
+        - Pharmacist
+        - Patient
+        - Admin / cross-cutting
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      placeholder: As a <role>, I want <capability> so that <outcome>.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Must-have (this sprint)
+        - Should-have
+        - Could-have
+        - Nice-to-have
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Design notes / constraints
