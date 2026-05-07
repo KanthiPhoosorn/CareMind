@@ -227,3 +227,52 @@ See [`QUALITY.md`](./QUALITY.md) for the full strategy. Key conventions:
 - **Service role key**: server-side only — never expose in client bundles.
 - **PHI**: treat patient data as sensitive. No logging of names/ANs. Redact before AI calls.
 - **Dependencies**: run `npm audit` regularly. Address CRITICAL/HIGH before release.
+
+---
+
+## 13. Brand voice & design system
+
+Full design system reference lives in the `caremind-design` Claude skill (`~/.claude/skills/caremind-design/`). Drop-in tokens are in `web/app/tokens.css`; brand SVGs in `web/public/brand/`.
+
+**Two-channel color rule.** Role colors (Doctor blue / Nurse green / Pharmacist purple / Patient amber) tint *chrome* — nav, primary buttons, focus rings. Severity colors (Critical red / Warning amber / Info blue / Positive green) tint *content* — badges, alerts, vital trends. **Never mix the two channels.**
+
+**Voice.**
+
+- **Direct, never chatty.** "Start metoprolol 25mg BID." Not "Let's go ahead and get you started…"
+- **Patient-respectful.** Never "the AFib in bed 4." Always `Mr. Chen, 67, ward 4B, bed 12`.
+- **Quantified.** Numbers + units, every time. `WBC 12.5 (high)` beats `elevated white count`.
+- **Explicit about uncertainty.** AI output is prefixed `Suggested:` or `AI summary:` and shows source records. Never "I think" / "Maybe."
+- **Bilingual-ready.** Every string lives in i18n. Clinical terms get clinician translations, not generic ones.
+
+**Tone by surface.**
+
+| Surface | Tone | Example |
+|---|---|---|
+| Clinical lists & detail | Neutral, precise | `Azithromycin 500mg PO · Active · Dr. Johnson · Started Feb 14` |
+| Empty states | Quietly helpful | `No labs yet. Order a panel from the Plan tab.` |
+| AI summaries | Cautious, sourced | `Suggested: WBC normalized (12.5 → 9.8). Source: CBC, Feb 15.` |
+| Critical alerts | Urgent, terse | `Drug interaction: Apixaban + NSAID. Bleeding risk.` |
+| Patient-facing (mobile) | Warm, plain language | `Your fever has gone down since yesterday. Keep resting.` |
+
+**Casing.**
+
+- **Sentence case for UI** — buttons, headers, nav, table columns. `Patient list`, not `Patient List`.
+- **Title Case only for proper nouns and the product name** — `CareMind`, registered panels.
+- **ALL CAPS reserved for severity badges** — `CRITICAL`, `WARNING` (small, tracking-wide). Never for buttons or headlines.
+
+**Other rules.**
+
+- **You/we, not I.** Patient-facing copy says "you." Clinician copy lists actions, doesn't narrate.
+- **No emoji. Anywhere.** Not in copy, not in icons, not as bullets. Clinical environments don't tolerate them.
+- **No exclamation marks.** A flat tone is part of the brand.
+- **Numbers + units.** `Heart rate 75 bpm` patient-facing; `HR 75` clinician-facing.
+- **Dates: relative + absolute.** `Today 09:30` · `Yesterday 14:00` · `Feb 14, 09:30` once older.
+
+**Visual rules.**
+
+- **No gradients, no decorative illustrations, no stock imagery, no glassmorphism.**
+- **Iconography**: Lucide only (`lucide-react`), 1.5px stroke, sizes 16/20/24, `currentColor`.
+- **No unicode-as-icon** (`→`, `✓`, `★`) — use Lucide equivalents.
+- **Border radius**: 6px buttons/inputs, 8px cards, 12px sheets/modals, 9999px pills.
+- **Shadows**: flat by default. Cards use `var(--shadow-card)`, modals add `var(--shadow-modal)`. No inner shadows, no glows, no colored shadows.
+- **Motion**: `cubic-bezier(0.2, 0, 0, 1)` (`--ease-standard`). 120ms hover, 200ms entry, 280ms sheet. No springs, no bounces. Reduced-motion collapses to 80ms opacity fades.

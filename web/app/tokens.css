@@ -1,0 +1,184 @@
+/* CareMind Design System — tokens (consumed by globals.css and Tailwind) */
+/* Fonts (--font-ui, --font-mono) are provided by next/font in app/layout.tsx */
+
+:root {
+  /* ─── Brand ─── */
+  --brand-primary: #2563eb; /* Doctor blue — also app splash + adaptive icon */
+
+  /* ─── Role colors (chrome) ─── */
+  --role-doctor: #2563eb;
+  --role-nurse: #059669;
+  --role-pharmacist: #7c3aed;
+  --role-patient: #d97706;
+
+  /* Soft tints for backgrounds (12% mix) */
+  --role-doctor-bg: #eff4fe;
+  --role-nurse-bg: #ecfdf5;
+  --role-pharmacist-bg: #f3eefe;
+  --role-patient-bg: #fef6e7;
+
+  /* ─── Severity colors (content) ─── */
+  --sev-critical: #dc2626;
+  --sev-warning: #f59e0b;
+  --sev-info: #3b82f6;
+  --sev-positive: #10b981;
+
+  --sev-critical-bg: #fef2f2;
+  --sev-warning-bg: #fffbeb;
+  --sev-info-bg: #eff6ff;
+  --sev-positive-bg: #ecfdf5;
+
+  /* ─── Neutrals ─── */
+  --bg-app: #f8fafc; /* slate-50 — app canvas */
+  --bg-surface: #ffffff;
+  --bg-sunken: #f1f5f9; /* slate-100 — table stripes, code blocks */
+
+  --fg1: #0f172a; /* slate-900 — primary text */
+  --fg2: #334155; /* slate-700 — body */
+  --fg3: #64748b; /* slate-500 — captions, meta */
+  --fg4: #94a3b8; /* slate-400 — disabled, placeholder */
+
+  --border: #e5e7eb;
+  --border-strong: #cbd5e1;
+  --divider: #f1f5f9;
+
+  /* ─── Radii ─── */
+  --r-sm: 4px;
+  --r-md: 6px; /* buttons, inputs */
+  --r-lg: 8px; /* cards */
+  --r-xl: 12px; /* sheets, modals */
+  --r-2xl: 16px;
+  --r-app: 24px; /* phone app icon, splash */
+  --r-pill: 9999px;
+
+  /* ─── Shadow ─── */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-modal: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.12);
+  --shadow-focus: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--brand-primary);
+
+  /* ─── Spacing ─── */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-12: 48px;
+
+  /* ─── Motion ─── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --d-fast: 120ms;
+  --d-base: 200ms;
+  --d-slow: 280ms;
+
+  /* ─── Type scale ─── */
+  --t-display: 32px;
+  --t-h1: 24px;
+  --t-h2: 20px;
+  --t-h3: 16px;
+  --t-body: 14px;
+  --t-small: 13px;
+  --t-caption: 12px;
+  --t-micro: 11px;
+
+  /* IBM Plex Sans Thai Looped covers both English UI and Thai */
+  --font-thai: var(--font-ui);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: #0a0a0a;
+    --bg-surface: #131722;
+    --bg-sunken: #1e2230;
+    --fg1: #ededed;
+    --fg2: #c7cdd9;
+    --fg3: #8b93a7;
+    --fg4: #5a6377;
+    --border: #2a3142;
+    --border-strong: #3b4459;
+    --divider: #1e2230;
+  }
+}
+
+/* ─── Semantic typography ─── */
+h1,
+.h1 {
+  font: 700 var(--t-h1) / 1.2 var(--font-ui);
+  letter-spacing: -0.01em;
+  color: var(--fg1);
+}
+h2,
+.h2 {
+  font: 600 var(--t-h2) / 1.25 var(--font-ui);
+  letter-spacing: -0.005em;
+  color: var(--fg1);
+}
+h3,
+.h3 {
+  font: 600 var(--t-h3) / 1.3 var(--font-ui);
+  color: var(--fg1);
+}
+.display {
+  font: 700 var(--t-display) / 1.15 var(--font-ui);
+  letter-spacing: -0.02em;
+  color: var(--fg1);
+}
+p,
+.body {
+  font: 400 var(--t-body) / 1.5 var(--font-ui);
+  color: var(--fg2);
+}
+.small {
+  font: 400 var(--t-small) / 1.45 var(--font-ui);
+  color: var(--fg2);
+}
+.caption {
+  font: 500 var(--t-caption) / 1.35 var(--font-ui);
+  color: var(--fg3);
+}
+.micro {
+  font: 600 var(--t-micro) / 1.3 var(--font-ui);
+  color: var(--fg3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+code,
+.mono,
+.data {
+  font: 500 var(--t-body) / 1.4 var(--font-mono);
+  color: var(--fg1);
+  font-variant-numeric: tabular-nums;
+}
+.thai {
+  font-family: var(--font-thai);
+  line-height: 1.6;
+}
+
+/* Severity badge — capsule, all-caps micro */
+.sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 11px / 1 var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: var(--r-pill);
+}
+.sev--critical {
+  color: var(--sev-critical);
+  background: var(--sev-critical-bg);
+}
+.sev--warning {
+  color: var(--sev-warning);
+  background: var(--sev-warning-bg);
+}
+.sev--info {
+  color: var(--sev-info);
+  background: var(--sev-info-bg);
+}
+.sev--positive {
+  color: var(--sev-positive);
+  background: var(--sev-positive-bg);
+}

@@ -11,7 +11,14 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": { "@caremind/shared/*": ["shared/src/*"] }
+    "paths": {
+      "@caremind/shared/*": [
+        "shared/src/*"
+      ]
+    }
   },
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ],
+  "extends": "expo/tsconfig.base"
 }
