@@ -28,14 +28,11 @@ gh api \
   "/repos/${REPO}/branches/${BRANCH}/protection" \
   --input - <<'EOF'
 {
-  "required_status_checks": {
-    "strict": true,
-    "contexts": ["Lint", "Type Check", "Prettier Check"]
-  },
+  "required_status_checks": null,
   "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true
+    "required_approving_review_count": 0,
+    "dismiss_stale_reviews": false,
+    "require_code_owner_reviews": false
   },
   "enforce_admins": false,
   "restrictions": null,
@@ -48,18 +45,14 @@ EOF
 echo ""
 echo "✅ Branch protection applied!"
 echo ""
-echo "   Rules configured:"
+echo "   Rules configured (solo-dev profile):"
 echo "   ├── Require PR before merging"
-echo "   ├── Require 1 approving review"
-echo "   ├── Dismiss stale reviews on new commits"
-echo "   ├── Require review from CODEOWNERS"
-echo "   ├── Required status checks (strict — branch must be up to date):"
-echo "   │   ├── Lint"
-echo "   │   ├── Type Check"
-echo "   │   └── Prettier Check"
+echo "   ├── 0 approving reviews required (self-merge OK)"
+echo "   ├── No code-owner review requirement"
+echo "   ├── No required status checks (CI moved to local husky pre-commit/pre-push)"
 echo "   ├── Require linear history (no merge commits)"
-echo "   ├── No force pushes"
+echo "   ├── No force pushes to main"
 echo "   └── No branch deletion"
 echo ""
-echo "   ℹ️  Admins can still bypass (enforce_admins=false)."
-echo "      Set enforce_admins=true once the team is fully onboarded."
+echo "   ℹ️  Tighten reviews to >=1 + code-owner once a second contributor joins."
+echo "      Re-add required_status_checks if GitHub Actions CI is reintroduced."

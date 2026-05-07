@@ -12,6 +12,7 @@
     "dev:mobile": "npm run start --workspace=mobile",
     "build:web": "npm run build --workspace=web",
     "build:shared": "npm run build --workspace=shared",
+    "sync": "node scripts/sync.mjs",
     "lint": "npm run lint --workspaces --if-present",
     "type-check": "npm run type-check --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .prettierignore",
@@ -34,6 +35,9 @@
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,css}": [
       "prettier --write"
+    ],
+    "web/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix --max-warnings=0"
     ]
   }
 }
