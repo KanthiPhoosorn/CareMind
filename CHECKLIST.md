@@ -22,7 +22,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - [x] Monorepo scaffold (`web/`, `mobile/`, `shared/`, `supabase/`)
 - [x] Workspaces + TS strict + path alias `@caremind/shared`
 - [x] Tailwind: role + severity colors wired
-- [ ] GitHub repo created, branch protection, initial push
+- [x] GitHub repo created + initial push (https://github.com/KanthiPhoosorn/CareMind)
+- [ ] Branch protection on `main` (require PR + review + green CI)
 - [ ] CI: lint + `tsc --noEmit` on PR (GitHub Actions)
 - [ ] `README.md` with setup steps
 - [ ] `CONVENTIONS.md` (or pin to Notion section)

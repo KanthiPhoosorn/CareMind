@@ -32,7 +32,7 @@ We follow an iterative sprint-based SDLC tuned for a 5-week MVP push:
 A task is **not done** until:
 
 - [ ] Code reviewed by ≥1 teammate (no self-merges to `main`)
-- [ ] `pnpm lint` + `pnpm type-check` pass
+- [ ] `npm run lint` + `npm run type-check` pass
 - [ ] Unit tests written and passing
 - [ ] Integration tests added if the change touches DB / external APIs
 - [ ] Coverage ≥ 80% for **new** code (existing code grandfathered)
@@ -175,8 +175,8 @@ ADR template:
 ## 10. Onboarding Checklist (new teammate)
 
 - [ ] Clone repo, copy `.env.example` → `.env.local`
-- [ ] Install: Node 18+, pnpm, Supabase CLI, Expo CLI
-- [ ] Run `pnpm install`
+- [ ] Install: Node 18+, npm, Supabase CLI, Expo CLI
+- [ ] Run `npm install`
 - [ ] Read this `QUALITY.md` and the `CHECKLIST.md`
 - [ ] Run the test suite locally — all green before first PR
 - [ ] Pair on a small task to learn the workflow

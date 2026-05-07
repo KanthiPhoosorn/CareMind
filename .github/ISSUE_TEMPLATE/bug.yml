@@ -1,0 +1,60 @@
+name: Bug report
+description: Something is broken
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: role
+    attributes:
+      label: Role affected
+      options:
+        - Doctor (web)
+        - Nurse (web + mobile)
+        - Pharmacist (web)
+        - Patient (mobile)
+        - Cross-cutting / infra
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: P0 = release blocker, P1 = core broken, P2 = UX, P3 = polish
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: Browser / device / app version / Node version
+  - type: textarea
+    id: extras
+    attributes:
+      label: Screenshot / log / suspected component
