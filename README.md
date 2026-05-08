@@ -10,7 +10,7 @@ Doctors, nurses, pharmacists, and patients each get a role-aware view of patient
 | Mobile (Nurse / Patient)  | Expo 54 + React Native                | `mobile/`               |
 | Shared library            | TypeScript                            | `shared/`               |
 | Backend                   | Supabase (Postgres + Auth + Realtime) | `supabase/`             |
-| AI                        | Gemini 2.5 Pro                        | `shared/services/ai.ts` |
+| AI                        | Self-hosted local model (RAG + citations) | `shared/services/ai.ts` |
 
 ---
 
@@ -49,7 +49,9 @@ Fill in the values — see `.env.example` for the full list:
 | `NEXT_PUBLIC_SUPABASE_URL`      | Supabase dashboard → Settings → API             |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same                                            |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Same (never expose client-side)                 |
-| `NEXT_PUBLIC_GEMINI_API_KEY`    | [Google AI Studio](https://aistudio.google.com) |
+| `LOCAL_LLM_BASE_URL`            | Self-hosted inference endpoint for the local model |
+| `LOCAL_LLM_MODEL`               | Local chat model name/version                    |
+| `LOCAL_EMBEDDING_MODEL`         | Local embedding model name/version               |
 
 ### 3. Supabase setup
 
@@ -107,6 +109,7 @@ CareMind/
 │   ├── app/              # Screens (file-based routing)
 │   ├── components/       # Mobile components
 │   └── services/         # API / device services
+├── data/                 # Raw hospital case files for chatbot corpus
 ├── sample_data/          # Real clinical data fixtures (anonymised)
 ├── scripts/              # One-off setup scripts
 ├── shared/               # @caremind/shared workspace
@@ -149,12 +152,13 @@ Recorded in `docs/adr/`. Key decisions so far:
 | ADR                                                | Decision                                       |
 | -------------------------------------------------- | ---------------------------------------------- |
 | [0001](docs/adr/0001-multi-tenant-architecture.md) | Multi-tenant with `hospital_id` row-scoped RLS |
+| [0002](docs/adr/0002-local-model-citation-chatbots.md) | Self-hosted local model with citation-based patient and staff chatbots |
 
 ---
 
 ## Sample Data
 
-`sample_data/` contains anonymised clinical records for 3 patients (`an1`, `an2`, `an3`). Each data type has a raw file and a cleaned version (`*_clean.json`). See [`DATA_STRUCTURE_GUIDE.md`](sample_data/DATA_STRUCTURE_GUIDE.md) for the schema.
+`data/` contains the raw hospital case files used to build the chatbot corpus, grouped by encounter folder (`AN1` ... `AN10`). `sample_data/` contains anonymised fixtures and cleaned JSON versions for the structured app flows. See [`DATA_STRUCTURE_GUIDE.md`](sample_data/DATA_STRUCTURE_GUIDE.md) for the schema.
 
 ---
 

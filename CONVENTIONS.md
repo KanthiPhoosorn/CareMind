@@ -143,11 +143,11 @@ import { createClient } from '@supabase/supabase-js';
 
 ---
 
-## 7. AI / Gemini
+## 7. AI / Local Model
 
-- AI service lives in `shared/services/ai.ts` — one abstraction, swappable provider.
-- **Never send PHI** (patient name, admission number) to external APIs. Strip before calling.
-- Always validate AI output against expected schema before rendering.
+- AI service lives in `shared/services/ai.ts` — one abstraction, backed by the self-hosted local model stack.
+- Never let a request escape its hospital, role, or patient scope when building prompt context.
+- Always validate AI output against expected schema and citation list before rendering.
 - Use streaming for long responses.
 - Cache results by `(patientId, fromTs, toTs)` to avoid redundant calls.
 
@@ -206,7 +206,7 @@ See [`QUALITY.md`](./QUALITY.md) for the full strategy. Key conventions:
     it('flags SpO2 below 90% as critical', () => { ... });
   });
   ```
-- Mock external services (Supabase, Gemini) — never hit real APIs in unit tests.
+- Mock external services (Supabase, local model gateway) — never hit real APIs in unit tests.
 - Integration tests may use a test Supabase project.
 
 ---

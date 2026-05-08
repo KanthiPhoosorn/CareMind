@@ -95,7 +95,7 @@ These have higher priority than generic feature tests.
 | Test                          | What it proves                                     | Severity if broken       |
 | ----------------------------- | -------------------------------------------------- | ------------------------ |
 | **Multi-tenant RLS**          | Hospital A user cannot read Hospital B records     | **P0** — release blocker |
-| **PHI redaction in AI calls** | Patient name / AN stripped before Gemini call      | **P0**                   |
+| **PHI boundary in AI calls**   | Patient name / AN stripped before local model prompt | **P0**                   |
 | **Audit log**                 | Every patient record view writes to `audit_log`    | P1                       |
 | **Vital sign flagging**       | Out-of-range values raise correct severity         | P1                       |
 | **Drug interaction**          | Known dangerous pairs trigger alert                | P1                       |

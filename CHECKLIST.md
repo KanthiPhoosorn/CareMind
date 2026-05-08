@@ -5,7 +5,7 @@
 
 **Decisions locked in (2026-05-07)**
 
-- **AI primary:** Gemini 2.5 Pro (long context for full patient charts, strong Thai, already scaffolded). AI service stays abstracted — swappable.
+- **AI primary:** self-hosted local model only. The AI layer must support citation-based retrieval, patient/staff role separation, and no external LLM APIs.
 - **Multi-tenant:** yes — designed to onboard multiple hospitals. Schema gets `hospitals` table + `hospital_id` FK + tenant-scoped RLS.
 - **Test stack:** Vitest (unit) + Playwright (web E2E + a11y + visual) + Maestro (mobile E2E) + pgTAP (DB/RLS) + Lighthouse CI. See [`QUALITY.md`](./QUALITY.md).
 - **MediHack prototype:** reference only for now; port decision deferred.
@@ -114,12 +114,13 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - [ ] Imaging serial comparison
 - [ ] Returns `DeltaSummary` per `sample_data/DATA_STRUCTURE_GUIDE.md` spec
 
-### AI layer (Gemini 2.5 Pro)
+### AI layer (local model + citation RAG)
 
-- [ ] Move Gemini service to `shared/services/ai.ts` (currently mobile-only) and bump models to `gemini-2.5-pro` / `gemini-2.5-flash`
-- [ ] System prompts: clinical summary, drug interaction, AI consult
+- [ ] Stand up the local inference gateway and wire it through `shared/services/ai.ts`
+- [ ] Build citation-based retrieval over `data/` and `sample_data/` with hospital, role, and patient scoping
+- [ ] Split prompts and policies for patient chatbot (symptom screening) and staff chatbot (summaries)
 - [ ] Streaming responses
-- [ ] ❓ PHI redaction policy before sending to LLM (recommend: strip name/AN, keep clinical fields)
+- [ ] ❓ PHI redaction policy before sending prompt context into the model (recommend: strip name/AN, keep clinical fields)
 - [ ] Cache by `(patientId, fromTs, toTs)`
 
 ### UI features
@@ -192,7 +193,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 ## Open decisions
 
 - ❓ **Supabase mode**: cloud or local for Sprint 0? _(still blocks seed script)_
-- ❓ **PHI redaction** policy for Gemini calls
+- ❓ **Local model stack**: serving runtime, embedding model, and GPU/CPU sizing
 - ❓ **Hospital onboarding** flow: self-serve signup vs admin-invite-only
 - ❓ **Realtime** for nurse vitals view, or is polling acceptable for MVP?
 - ❓ **MediHack prototype**: port screens, or use as visual reference only?
