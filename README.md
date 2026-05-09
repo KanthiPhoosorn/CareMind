@@ -11,6 +11,7 @@ Doctors, nurses, pharmacists, and patients each get a role-aware view of patient
 | Shared library            | TypeScript                            | `shared/`               |
 | Backend                   | Supabase (Postgres + Auth + Realtime) | `supabase/`             |
 | AI                        | Self-hosted local model (RAG + citations) | `shared/services/ai.ts` |
+| Vector DB                  | Milvus (self-hosted, local/dev compose) | `deployment/milvus/`    |
 
 ---
 
@@ -52,6 +53,11 @@ Fill in the values — see `.env.example` for the full list:
 | `LOCAL_LLM_BASE_URL`            | Self-hosted inference endpoint for the local model |
 | `LOCAL_LLM_MODEL`               | Local chat model name/version                    |
 | `LOCAL_EMBEDDING_MODEL`         | Local embedding model name/version               |
+| `MILVUS_HOST`                  | Milvus gRPC host (local default: `127.0.0.1`)    |
+| `MILVUS_PORT`                  | Milvus gRPC port (local default: `19530`)        |
+| `MILVUS_COLLECTION`            | Milvus collection name for clinical chunks       |
+| `MILVUS_DIM`                   | Embedding dimension used during ingestion        |
+| `MILVUS_USER` / `MILVUS_PASSWORD` | Optional auth for managed Milvus deployments |
 
 ### 3. Supabase setup
 
@@ -70,7 +76,23 @@ supabase start
 supabase db reset      # applies migrations + seed
 ```
 
-### 4. Run the dev servers
+### 4. Milvus setup (for chatbot retrieval)
+
+Start the local vector DB from the repo root:
+
+```bash
+cd deployment/milvus
+docker compose up -d
+```
+
+Smoke test the connection and ingestion from the repo root:
+
+```bash
+pip install -r scripts/requirements-milvus.txt
+python scripts/ingest_to_milvus.py --data-dir ./sample_data --milvus-host 127.0.0.1 --milvus-port 19530
+```
+
+### 5. Run the dev servers
 
 ```bash
 # Web (http://localhost:3000)
@@ -153,6 +175,7 @@ Recorded in `docs/adr/`. Key decisions so far:
 | -------------------------------------------------- | ---------------------------------------------- |
 | [0001](docs/adr/0001-multi-tenant-architecture.md) | Multi-tenant with `hospital_id` row-scoped RLS |
 | [0002](docs/adr/0002-local-model-citation-chatbots.md) | Self-hosted local model with citation-based patient and staff chatbots |
+| [0003](docs/adr/0003-milvus-vector-db.md) | Milvus as the self-hosted vector DB for retrieval |
 
 ---
 

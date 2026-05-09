@@ -6,6 +6,7 @@
 **Decisions locked in (2026-05-07)**
 
 - **AI primary:** self-hosted local model only. The AI layer must support citation-based retrieval, patient/staff role separation, and no external LLM APIs.
+- **Vector DB:** Milvus for self-hosted retrieval storage and similarity search.
 - **Multi-tenant:** yes — designed to onboard multiple hospitals. Schema gets `hospitals` table + `hospital_id` FK + tenant-scoped RLS.
 - **Test stack:** Vitest (unit) + Playwright (web E2E + a11y + visual) + Maestro (mobile E2E) + pgTAP (DB/RLS) + Lighthouse CI. See [`QUALITY.md`](./QUALITY.md).
 - **MediHack prototype:** reference only for now; port decision deferred.
