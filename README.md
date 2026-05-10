@@ -92,7 +92,65 @@ pip install -r scripts/requirements-milvus.txt
 python scripts/ingest_to_milvus.py --data-dir ./sample_data --milvus-host 127.0.0.1 --milvus-port 19530
 ```
 
-### 5. Run the dev servers
+### 5. Phase 3: Small Causal Transformer (optional)
+
+CareMind ships a production-ready tiny causal transformer for experimentation and learning. It learns real clinical text patterns from the sample data.
+
+**Features:**
+- Word-level tokenization optimized for small medical corpora
+- Adaptive vocabulary sizing (learns 240-300 tokens from 39-40 real clinical snippets)
+- Confidence-based generation filtering to avoid nonsense outputs
+- Real clinical text generation: "Patient has breathing management ECG shows temperature normalized..."
+- Lightweight: trains in <3 seconds on CPU, loss converges to 3.2
+
+**Setup:**
+
+```bash
+# Create isolated Python environment (first time only)
+python3 -m venv .venv-transformer
+.venv-transformer/bin/pip install --upgrade pip
+.venv-transformer/bin/pip install -r scripts/requirements-transformer.txt
+```
+
+**Quick start:**
+
+```bash
+# Smoke test with 4 different prompts
+.venv-transformer/bin/python scripts/train_small_transformer.py --smoke-test
+
+# Custom training
+.venv-transformer/bin/python scripts/train_small_transformer.py \
+  --steps 150 \
+  --batch-size 12 \
+  --prompt "Patient has" \
+  --temperature 0.65 \
+  --max-new-tokens 40
+```
+
+**Arguments:**
+- `--steps` — training iterations (default: 120)
+- `--batch-size` — examples per step (default: 16)
+- `--prompt` — generation seed text (try: "Patient has", "Lab results show", "Continue")
+- `--temperature` — sampling randomness 0.0=deterministic, 1.0=random (default: 0.7)
+- `--max-new-tokens` — generated text length (default: 40)
+- `--learning-rate` — optimizer LR (default: 3e-4)
+
+**Technical details:**
+- Corpus: extracted from clinical JSON files in `sample_data/` (39 high-quality narrative snippets)
+- Tokenizer: word-level with 241 tokens (no character-level noise)
+- Model: 2-layer decoder-only transformer, 96-dim embeddings, 4 attention heads
+- Training: AdamW optimizer, cross-entropy loss, gradient clipping
+- Generation: top-k sampling (k=15) with temperature scaling and confidence filtering
+
+**Use cases:**
+- Learning transformer architecture on real medical text
+- Testing language generation on small datasets
+- Experimentation with prompts and generation strategies
+- Educational reference for building NLP systems
+
+→ **Full documentation**: See [docs/PHASE3_TRANSFORMER.md](./docs/PHASE3_TRANSFORMER.md) for detailed architecture, customization guides, and experiments.
+
+### 6. Run the dev servers
 
 ```bash
 # Web (http://localhost:3000)

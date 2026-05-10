@@ -10,6 +10,8 @@ from typing import List, Dict
 import os
 import traceback
 
+import pandas as pd
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize
@@ -43,8 +45,8 @@ def _tfidf_query_similarity(query: str, texts: List[str], top_k: int = 5):
     return [(int(i), float(sims[i])) for i in idxs]
 
 
-def hybrid_retrieve(query: str, patient_an: str, top_k: int = 5) -> List[Dict]:
-    """Return top-k retrievals scoped to `patient_an`.
+def hybrid_retrieve(query: str, patient_an: str, top_k: int = 5) -> pd.DataFrame:
+    """Return top-k retrievals scoped to `patient_an` as a DataFrame.
 
     Strategy:
       1. Try Milvus vector search (requires pymilvus and collection present).
@@ -99,7 +101,7 @@ def hybrid_retrieve(query: str, patient_an: str, top_k: int = 5) -> List[Dict]:
             for hit in hits[0]:
                 meta = {f: hit.entity.get(f) for f in ["patient_an", "source_file", "source_ref", "text"]}
                 results.append({"source_file": meta.get("source_file"), "source_ref": meta.get("source_ref"), "patient_an": meta.get("patient_an"), "text": meta.get("text"), "score": float(hit.distance)})
-            return results
+            return pd.DataFrame(results)
     except Exception:
         # Milvus path failed; fall back to TF-IDF over local sample_data
         try:
@@ -123,7 +125,7 @@ def hybrid_retrieve(query: str, patient_an: str, top_k: int = 5) -> List[Dict]:
             texts = [c.text for c in chunks if getattr(c, "patient_an", "") == patient_an]
             if not texts:
                 # no patient-scoped text
-                return []
+                return pd.DataFrame()
 
             sims = _tfidf_query_similarity(query, texts, top_k=top_k)
             results = []
@@ -131,7 +133,7 @@ def hybrid_retrieve(query: str, patient_an: str, top_k: int = 5) -> List[Dict]:
             for idx, score in sims:
                 c = patient_chunks[idx]
                 results.append({"source_file": c.source_file, "source_ref": c.source_ref, "patient_an": c.patient_an, "text": c.text, "score": score})
-            return results
+            return pd.DataFrame(results)
         except Exception:
             traceback.print_exc()
-            return []
+            return pd.DataFrame()
