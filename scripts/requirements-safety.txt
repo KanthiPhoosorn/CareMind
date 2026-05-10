@@ -1,0 +1,20 @@
+# Clinical Safety Layer Dependencies
+# Phase 4 requirements
+
+# Core (mostly standard library, but listed here for clarity)
+# - re (standard library)
+# - json (standard library)
+# - logging (standard library)
+# - dataclasses (standard library in Python 3.7+)
+# - enum (standard library)
+# - hashlib (standard library)
+# - datetime (standard library)
+# - typing (standard library)
+
+# Optional: Enhanced ML-based safety (for future expansion)
+# scikit-learn>=1.3.0  # For toxicity classification
+# numpy>=1.24.0       # Numerical operations
+# scipy>=1.10.0       # Statistical methods
+
+# Optional: Production logging and monitoring
+# python-json-logger>=2.0.0  # Structured logging for audit trails

@@ -144,6 +144,37 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - Inference: <100ms on CPU
 - Real example output: "Patient has breathing management ECG shows temperature normalized patient tolerating..."
 
+### Phase 4: Clinical Safety Layer (production-ready)
+
+- [x] Implement PII detector and redactor (names, emails, phone, SSN, MRN, dates, credit cards, IP)
+- [x] Create content filter blocking dangerous medical patterns
+- [x] Build hallucination detector for unrealistic claims
+- [x] Implement drug interaction checker (20+ medications, major interactions)
+- [x] Create contraindication validator (8+ medical conditions)
+- [x] Implement dosage validator with therapeutic ranges
+- [x] Build audit logging system for compliance
+- [x] Create ClinicalSafetyLayer orchestrator class with hybrid approach
+- [x] Add integration examples with Phase 3 model in notebook
+- [x] Create comprehensive documentation (PHASE4_SAFETY_LAYER.md)
+- [x] Update README.md with safety layer section
+- [x] Validate all components with test suite
+
+**Key metrics:**
+- Safety levels: SAFE (🟢) / WARNING (🟡) / BLOCKED (🔴)
+- PII detection: 9 types (names, emails, phone, SSN, MRN, DOB, ZIP, credit card, IP)
+- Drug database: 20+ medications, 10+ major interactions, 8+ contraindications
+- Performance: <1ms per safety check, negligible overhead
+- Architecture: Hybrid rule-based + ML-ready confidence scoring
+
+**Components:**
+- ✅ PIIDetector — Regex-based PII detection and redaction
+- ✅ ContentFilter — Dangerous pattern blocking and context validation
+- ✅ HallucinationDetector — Unrealistic claim detection with probability scoring
+- ✅ DrugInteractionChecker — Known drug interaction validation
+- ✅ ContraindicationChecker — Medication vs condition validation
+- ✅ DosageValidator — Dosage range validation
+- ✅ ClinicalSafetyLayer — Master orchestrator with audit logging
+
 ### UI features
 
 - [ ] Delta Summary panel on patient detail (date-range picker)

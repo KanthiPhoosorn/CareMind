@@ -150,7 +150,87 @@ python3 -m venv .venv-transformer
 
 → **Full documentation**: See [docs/PHASE3_TRANSFORMER.md](./docs/PHASE3_TRANSFORMER.md) for detailed architecture, customization guides, and experiments.
 
-### 6. Run the dev servers
+### 6. Phase 4: Clinical Safety Layer (production-ready)
+
+CareMind includes a **comprehensive Clinical Safety Layer** protecting medical text generation from harmful outputs, data breaches, and hallucinations.
+
+**Features:**
+- 🛡️ **Content Safety**: Blocks dangerous medical advice (stopping medications, extreme dosages)
+- 🔐 **Data Privacy**: Detects and redacts PII (names, emails, phone, SSN, MRN) from inputs/outputs
+- 🎯 **Hallucination Detection**: Identifies unrealistic medical claims (miracle cures, impossible stats)
+- 💊 **Drug Safety**: Validates medication interactions, contraindications, and dosages
+- 📋 **Audit Logging**: Maintains compliance-ready decision logs for each check
+- ⚡ **Hybrid Architecture**: Rule-based patterns + ML-ready confidence scoring
+
+**Integration:**
+
+```python
+from clinical_safety_layer import ClinicalSafetyLayer
+
+# Initialize safety layer
+safety = ClinicalSafetyLayer(log_file="safety_audit.jsonl")
+
+# Validate user input (detect PII)
+input_result = safety.validate_input(user_query)
+if input_result['level'] == 'BLOCKED':
+    return "Please don't include personal information in your query"
+
+# Validate model output before displaying
+output_result = safety.validate_output(model_response)
+if output_result['level'] == 'BLOCKED':
+    return "I cannot provide this medical advice. Please consult a healthcare provider."
+elif output_result['level'] == 'WARNING':
+    return f"{model_response}\n⚠️ Important: {output_result['reason']}"
+else:
+    return model_response
+```
+
+**Safety Levels:**
+- 🟢 **SAFE** — Output passed all checks, display directly
+- 🟡 **WARNING** — Minor concerns detected, display with disclaimer
+- 🔴 **BLOCKED** — Dangerous content found, don't display
+
+**Knowledge Base:**
+- **20+ medications** with dosage ranges (ibuprofen, acetaminophen, warfarin, metformin, etc.)
+- **Major drug interactions** (warfarin + aspirin, SSRI + MAOI, etc.)
+- **Contraindications** for 8+ medical conditions (pregnancy, kidney disease, asthma, etc.)
+- **PII patterns** (names, emails, phone, SSN, MRN, dates, credit cards, IPs)
+- **Dangerous patterns** (miracle claims, extreme dosages, stop medications, etc.)
+
+**Testing:**
+
+```bash
+# View live demo of all safety checks
+python scripts/clinical_safety_layer.py
+
+# Or test in notebook
+jupyter notebook CareMind_Custom_Citation_Based_Medical_Chatbot_for_Patient.ipynb
+# Navigate to "Phase 4: Clinical Safety Layer" section
+```
+
+**Configuration:**
+
+```python
+# Strict mode: warnings become blocking
+strict_safety = ClinicalSafetyLayer(strict_mode=True)
+
+# Add custom drug interaction
+safety.interaction_checker.MAJOR_INTERACTIONS[('drug1', 'drug2')] = 'interaction reason'
+
+# Extend dosage database
+safety.dosage_validator.DOSAGE_RANGES['new_drug'] = (min=10, max_single=50, max_daily=200)
+```
+
+**Compliance Features:**
+- ✅ Audit logging with timestamps and decision hash
+- ✅ JSON-format logs for analytics
+- ✅ Confidence scoring (0-1) with all decisions
+- ✅ Detailed categorization of safety violations
+- ✅ Report generation for compliance metrics
+
+→ **Full documentation**: See [docs/PHASE4_SAFETY_LAYER.md](./docs/PHASE4_SAFETY_LAYER.md) for architecture, customization, limitations, FAQ, and medical knowledge base details.
+
+### 7. Run the dev servers
 
 ```bash
 # Web (http://localhost:3000)
