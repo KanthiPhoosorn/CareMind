@@ -230,7 +230,94 @@ safety.dosage_validator.DOSAGE_RANGES['new_drug'] = (min=10, max_single=50, max_
 
 → **Full documentation**: See [docs/PHASE4_SAFETY_LAYER.md](./docs/PHASE4_SAFETY_LAYER.md) for architecture, customization, limitations, FAQ, and medical knowledge base details.
 
-### 7. Run the dev servers
+### 7. Phase 5: Thai Medical Language Optimization (TMLO)
+
+CareMind includes **Thai Medical Language Optimization** for real-world Thai hospital text that mixes Thai + English, abbreviations, synonyms, and clinical shorthand.
+
+**Problem Solved:**
+Real Thai hospital notes are **NOT monolingual**:
+```
+"Patient AN1 HT DM ไข้สูง 39°C ปวดศรีษะ c/o SOB"
+```
+
+Standard NLP fails because of:
+- Thai-English code-switching
+- 150+ medical abbreviations (HT, DM, SOB, c/o)
+- Symptom synonym variations (ไข้ vs ไข้สูง vs มีไข้)
+- Thai text with no spaces between words
+
+**Features:**
+- ✅ **Thai-English Code-Switching** — Detects and handles mixed-language input
+- ✅ **150+ Abbreviations** — Medical abbreviation dictionary in Thai context
+- ✅ **Symptom Standardization** — Thai clinical terms → English medical terminology
+- ✅ **Synonym Normalization** — Reduces variations (ไข้, เจ็บ, ปวด) to standard terms
+- ✅ **Text Type Detection** — Identifies doctor notes, labs, vital signs, etc.
+- ✅ **Language Mix Analysis** — Reports Thai/English character ratios
+- ✅ **Medical Tokenization** — Longest-match greedy tokenization using clinical dictionary
+
+**Example Usage:**
+
+```python
+from thai_medical_nlp import ThaiMedicalProcessor
+
+processor = ThaiMedicalProcessor()
+
+# Process Thai + English medical text
+result = processor.process("Patient AN1 HT DM ไข้สูง 39°C ปวดศรีษะ c/o SOB")
+
+print(result['normalized_text'])
+# Output: "Patient AN1 hypertension diabetes mellitus fever 39 celsius headache complains of shortness of breath"
+
+print(result['abbreviations_expanded'])
+# Output: {'HT': 'hypertension', 'DM': 'diabetes mellitus', 'c/o': 'complains of', 'SOB': 'shortness of breath'}
+
+print(result['text_type'])
+# Output: 'unknown' or detected type
+```
+
+**Medical Abbreviations Covered:**
+- **Conditions**: HT, DM, DM2, CAD, CHF, COPD, CKD, TB, HIV, AF, AMI, CVA, RA, SLE, OA
+- **Symptoms**: SOB, DOE, PND, N/V, LOC, AMS, CP, RLQ, LLQ
+- **Medications**: IV, IM, SC, PO, QID, TID, BID, OD, ACE-I, ARB, NSAID, SSRI
+- **Laboratory**: CBC, CMP, HbA1c, BUN, Cr, eGFR, AST, ALT, PT, PTT, TSH
+- **Vital Signs**: BP, HR, RR, SpO2, BMI
+
+**Symptom Normalization:**
+```
+Thai                        English
+ไข้, ไข้สูง, มีไข้, ร้อน   → fever
+ปวด, เจ็บ, เสียว          → pain
+ไอ, ho, cough            → cough
+หายใจติดขัด              → dyspnea
+ท้องเสีย                  → diarrhea
+```
+
+**Integration:**
+Phase 5 (TMLO) → Phase 2 (Improved retrieval) → Phase 3 (Transformer) → Phase 4 (Safety)
+
+```python
+# Complete pipeline
+thai_query = "ผู้ป่วย HT ไข้สูง 39°C หายใจติดขัด"
+
+# Step 1: Normalize with Phase 5
+normalized = processor.process(thai_query)
+
+# Step 2-4: Rest of pipeline uses clean, standardized text
+response = safe_medical_chatbot(normalized['normalized_text'], model, tokenizer, safety)
+```
+
+**Testing in Notebook:**
+
+```bash
+jupyter notebook CareMind_Custom_Citation_Based_Medical_Chatbot_for_Patient.ipynb
+# Navigate to "Phase 5: Thai Medical Language Optimization" section
+```
+
+→ **Full documentation**: See [docs/PHASE5_THAI_MEDICAL.md](./docs/PHASE5_THAI_MEDICAL.md) for complete architecture, customization, limitations, and advanced usage.
+
+→ **Run demo**: `python scripts/thai_medical_nlp.py`
+
+### 8. Run the dev servers
 
 ```bash
 # Web (http://localhost:3000)

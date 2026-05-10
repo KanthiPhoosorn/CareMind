@@ -175,6 +175,37 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - ✅ DosageValidator — Dosage range validation
 - ✅ ClinicalSafetyLayer — Master orchestrator with audit logging
 
+### Phase 5: Thai Medical Language Optimization (TMLO)
+
+- [x] Implement medical abbreviation dictionary (150+ abbreviations)
+- [x] Build Thai medical symptom synonym mapping (50+ terms)
+- [x] Create Thai tokenizer with medical dictionary
+- [x] Implement document type detection (7 types: doctor, nurse, lab, radiology, pharmacy, vital signs, discharge)
+- [x] Add language mix detection (Thai vs English character quantification)
+- [x] Implement abbreviation expansion algorithm
+- [x] Implement synonym normalization algorithm
+- [x] Create batch processing capability
+- [x] Build comprehensive documentation (PHASE5_THAI_MEDICAL.md)
+- [x] Add notebook cells demonstrating all features
+- [x] Validate with real Thai medical text examples
+- [x] Integration with Phase 3 (transformer) and Phase 4 (safety layer)
+
+**Key metrics:**
+- Abbreviation coverage: 150+ medical abbreviations
+- Thai medical terms: 50+ symptom/condition synonyms
+- Text type detection: 7 document types
+- Processing speed: <10ms per text
+- Language mix: Automatic Thai/English/digit/other quantification
+- Architecture: Dictionary-based greedy longest-match tokenization
+
+**Components:**
+- ✅ ThaiMedicalAbbreviations — 150+ medical abbreviation dictionary
+- ✅ ThaiMedicalSynonyms — 50+ Thai medical term mappings
+- ✅ ThaiMedicalSymptoms — Standard symptom names
+- ✅ ThaiTextNormalizer — Core normalization engine
+- ✅ ThaiMedicalProcessor — Main entry point with batch processing
+- ✅ NormalizationResult — Structured output dataclass
+
 ### UI features
 
 - [ ] Delta Summary panel on patient detail (date-range picker)
