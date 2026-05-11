@@ -61,3 +61,39 @@ INSERT INTO imaging (patient_id, timestamp, order_id, exam_type, indication, tec
 ('00000000-0000-0000-0000-000000000012', '2026-02-14T14:30:00Z', 'IMG-2024-003', 'Chest X-Ray (PA and Lateral)', 'Atrial fibrillation, chest pain - evaluate cardiac size', 'Two-view chest radiograph', 'RAD003', 'Dr. Lisa Wong, MD', 'Final Report', '{"summary":"Mildly enlarged cardiac silhouette, lungs clear","heart":"Cardiothoracic ratio 0.52 (mildly enlarged). Left atrial enlargement noted.","lungs":"Clear lung fields bilaterally. No effusion or edema.","bones":"No acute abnormality","mediastinum":"Normal aortic contour"}', 'Mild cardiomegaly with left atrial enlargement, consistent with chronic AFib. No acute cardiopulmonary process.', 'Echocardiogram recommended for detailed cardiac assessment.', '/images/xray/an2_chest_20260214.dcm'),
 ('00000000-0000-0000-0000-000000000013', '2026-02-13T16:30:00Z', 'IMG-2024-004', 'Abdominal X-Ray (KUB)', 'Abdominal pain, diarrhea', 'Single supine view of abdomen', 'RAD002', 'Dr. Robert Martinez, MD', 'Final Report', '{"summary":"Normal bowel gas pattern, no obstruction","bowel":"Normal distribution of bowel gas. No dilated loops or air-fluid levels.","organs":"Liver and spleen normal in size. Kidneys symmetrical.","bones":"No acute fractures","soft tissues":"No abnormal calcifications or masses"}', 'Normal abdominal radiograph. No evidence of obstruction or perforation.', 'Clinical management as appropriate. No further imaging indicated at this time.', '/images/xray/an3_abd_20260213.dcm') ON CONFLICT DO NOTHING;
 
+-- ────────────────────────────────────────────────────────────────────────────
+-- Walk-in Queue: Departments and Routing Rules
+-- ────────────────────────────────────────────────────────────────────────────
+
+-- Departments for the existing 'GHB' hospital (00000000-0000-0000-0000-000000000001)
+INSERT INTO departments (id, hospital_id, code, name_th, name_en, no_show_seconds) VALUES
+  ('aaaa0000-0000-0000-0000-000000000001',
+   '00000000-0000-0000-0000-000000000001', 'GP',     'ทั่วไป',      'General Practice',  300),
+  ('aaaa0000-0000-0000-0000-000000000002',
+   '00000000-0000-0000-0000-000000000001', 'INTMED', 'อายุรกรรม',   'Internal Medicine', 300),
+  ('aaaa0000-0000-0000-0000-000000000003',
+   '00000000-0000-0000-0000-000000000001', 'DERM',   'ผิวหนัง',     'Dermatology',       300),
+  ('aaaa0000-0000-0000-0000-000000000004',
+   '00000000-0000-0000-0000-000000000001', 'ENT',    'หู คอ จมูก',   'ENT',               300),
+  ('aaaa0000-0000-0000-0000-000000000005',
+   '00000000-0000-0000-0000-000000000001', 'OPHTH',  'จักษุ',       'Ophthalmology',     300),
+  ('aaaa0000-0000-0000-0000-000000000006',
+   '00000000-0000-0000-0000-000000000001', 'ORTHO',  'กระดูก',      'Orthopedics',       300),
+  ('aaaa0000-0000-0000-0000-000000000007',
+   '00000000-0000-0000-0000-000000000001', 'ER',     'ฉุกเฉิน',     'Emergency',         120)
+ON CONFLICT DO NOTHING;
+
+-- Routing rules: (symptom_code, severity → department). NULL severity = any.
+-- `priority` ASC = first match wins.
+INSERT INTO routing_rules (hospital_id, symptom_code, severity, target_department_id, priority) VALUES
+  ('00000000-0000-0000-0000-000000000001', 'cough',   NULL,       'aaaa0000-0000-0000-0000-000000000002', 100),
+  ('00000000-0000-0000-0000-000000000001', 'fever',   'severe',   'aaaa0000-0000-0000-0000-000000000002', 10),
+  ('00000000-0000-0000-0000-000000000001', 'fever',   NULL,       'aaaa0000-0000-0000-0000-000000000001', 100),
+  ('00000000-0000-0000-0000-000000000001', 'stomach', 'severe',   'aaaa0000-0000-0000-0000-000000000002', 10),
+  ('00000000-0000-0000-0000-000000000001', 'stomach', NULL,       'aaaa0000-0000-0000-0000-000000000001', 100),
+  ('00000000-0000-0000-0000-000000000001', 'injury',  'severe',   'aaaa0000-0000-0000-0000-000000000007', 10),
+  ('00000000-0000-0000-0000-000000000001', 'injury',  NULL,       'aaaa0000-0000-0000-0000-000000000006', 100),
+  ('00000000-0000-0000-0000-000000000001', 'skin',    NULL,       'aaaa0000-0000-0000-0000-000000000003', 100),
+  ('00000000-0000-0000-0000-000000000001', 'eye_ent', NULL,       'aaaa0000-0000-0000-0000-000000000004', 100),
+  ('00000000-0000-0000-0000-000000000001', 'other',   NULL,       'aaaa0000-0000-0000-0000-000000000001', 100)
+ON CONFLICT DO NOTHING;
