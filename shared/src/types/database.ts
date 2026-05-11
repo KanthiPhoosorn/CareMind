@@ -1,3 +1,5 @@
+import type { SymptomCode, TriageSeverity, TicketState } from './queue';
+
 export interface Database {
   public: {
     Tables: {
@@ -134,6 +136,101 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+      };
+      departments: {
+        Row: {
+          id: string;
+          hospital_id: string;
+          code: string;
+          name_th: string;
+          name_en: string;
+          is_active: boolean;
+          no_show_seconds: number;
+          created_at: string;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['departments']['Row'],
+          'id' | 'created_at' | 'is_active' | 'no_show_seconds'
+        > & {
+          is_active?: boolean;
+          no_show_seconds?: number;
+        };
+        Update: Partial<Database['public']['Tables']['departments']['Insert']>;
+      };
+      routing_rules: {
+        Row: {
+          id: string;
+          hospital_id: string;
+          symptom_code: SymptomCode;
+          severity: TriageSeverity | null;
+          target_department_id: string;
+          priority: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['routing_rules']['Row'],
+          'id' | 'created_at' | 'is_active' | 'priority'
+        > & {
+          is_active?: boolean;
+          priority?: number;
+        };
+        Update: Partial<Database['public']['Tables']['routing_rules']['Insert']>;
+      };
+      queue_tickets: {
+        Row: {
+          id: string;
+          hospital_id: string;
+          department_id: string;
+          ticket_number: number;
+          phone_e164: string;
+          symptom_code: SymptomCode;
+          severity: TriageSeverity;
+          priority: number;
+          state: TicketState;
+          created_at: string;
+          verified_at: string | null;
+          called_at: string | null;
+          done_at: string | null;
+          cancelled_at: string | null;
+          no_show_at: string | null;
+          patient_token_hash: string;
+          called_by: string | null;
+          completed_by: string | null;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['queue_tickets']['Row'],
+          | 'id'
+          | 'created_at'
+          | 'verified_at'
+          | 'called_at'
+          | 'done_at'
+          | 'cancelled_at'
+          | 'no_show_at'
+          | 'called_by'
+          | 'completed_by'
+          | 'priority'
+          | 'state'
+        > & {
+          priority?: number;
+          state?: TicketState;
+        };
+        Update: Partial<Database['public']['Tables']['queue_tickets']['Insert']>;
+      };
+      queue_ticket_events: {
+        Row: {
+          id: number;
+          ticket_id: string;
+          from_state: TicketState | null;
+          to_state: TicketState;
+          actor: string | null;
+          occurred_at: string;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['queue_ticket_events']['Row'],
+          'id' | 'occurred_at'
+        >;
+        Update: Partial<Database['public']['Tables']['queue_ticket_events']['Insert']>;
       };
     };
   };
