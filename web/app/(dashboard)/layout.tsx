@@ -10,8 +10,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // /queue must be checked before /patients to avoid false prefix matches.
   let view = 'patients';
   if (pathname.includes('/pharmacy/queue')) view = 'queue';
+  else if (pathname.startsWith('/queue')) view = 'walkin';
   else if (pathname.includes('/patients')) view = 'patients';
 
   const isPharmacist = role === 'pharmacist';
@@ -19,6 +21,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const setView = (v: string) => {
     if (v === 'patients') router.push('/patients');
     else if (v === 'queue') router.push('/pharmacy/queue');
+    else if (v === 'walkin') router.push('/queue');
   };
 
   return (

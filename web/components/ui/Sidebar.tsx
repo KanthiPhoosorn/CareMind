@@ -1,6 +1,7 @@
 'use client';
 
-import { Users, ClipboardList, Sparkles, FileText, Pill, AlertTriangle } from 'lucide-react';
+// ListOrdered was added in M2 for the Walk-in Queue nav item.
+import { Users, ClipboardList, Sparkles, FileText, Pill, AlertTriangle, ListOrdered } from 'lucide-react';
 import { ROLE_COLOR, ROLE_BG } from '@/lib/mock-data';
 
 interface SidebarProps {
@@ -18,12 +19,13 @@ export function Sidebar({ role, view, setView }: SidebarProps) {
     'sparkles': Sparkles,
     'file-text': FileText,
     'pill': Pill,
-    'alert-triangle': AlertTriangle
+    'alert-triangle': AlertTriangle,
+    'list-ordered': ListOrdered,
   };
 
   const items = role === 'pharmacist'
     ? [['queue', 'pill', 'Rx Queue'], ['patients', 'users', 'Patients'], ['interactions', 'alert-triangle', 'Interactions']]
-    : [['patients', 'users', 'Patients'], ['rounds', 'clipboard-list', 'My rounds'], ['ai', 'sparkles', 'AI consult'], ['orders', 'file-text', 'Orders']];
+    : [['patients', 'users', 'Patients'], ['walkin', 'list-ordered', 'Walk-in Queue'], ['rounds', 'clipboard-list', 'My rounds'], ['ai', 'sparkles', 'AI consult'], ['orders', 'file-text', 'Orders']];
 
   return (
     <aside style={{ width: 224, background: '#fff', borderRight: '1px solid var(--border)', height: '100%', display: 'flex', flexDirection: 'column' }}>
