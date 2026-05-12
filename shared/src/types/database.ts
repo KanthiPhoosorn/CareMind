@@ -1,3 +1,9 @@
+// Handwritten Database type for Supabase.
+// `Relationships: never[]` is required on every table so the shape satisfies
+// Supabase's internal GenericTable. Even with it, Row types still lack index
+// signatures ([key: string]: unknown), so Database['public'] does NOT extend
+// GenericSchema — use callRpc() in server.ts for typed RPC calls instead of
+// supabase.rpc() directly.
 import type { SymptomCode, TriageSeverity, TicketState } from './queue';
 
 export interface Database {
@@ -24,6 +30,7 @@ export interface Database {
           'id' | 'created_at' | 'updated_at'
         >;
         Update: Partial<Database['public']['Tables']['patients']['Insert']>;
+        Relationships: never[];
       };
       doctor_notes: {
         Row: {
@@ -43,6 +50,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['doctor_notes']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['doctor_notes']['Insert']>;
+        Relationships: never[];
       };
       medications: {
         Row: {
@@ -66,6 +74,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['medications']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['medications']['Insert']>;
+        Relationships: never[];
       };
       lab_results: {
         Row: {
@@ -83,6 +92,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['lab_results']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['lab_results']['Insert']>;
+        Relationships: never[];
       };
       nurse_records: {
         Row: {
@@ -100,6 +110,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['nurse_records']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['nurse_records']['Insert']>;
+        Relationships: never[];
       };
       imaging: {
         Row: {
@@ -121,6 +132,7 @@ export interface Database {
         };
         Insert: Omit<Database['public']['Tables']['imaging']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['imaging']['Insert']>;
+        Relationships: never[];
       };
       profiles: {
         Row: {
@@ -131,11 +143,24 @@ export interface Database {
           staff_id: string | null;
           department: string | null;
           avatar_url: string | null;
+          hospital_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Relationships: never[];
+      };
+      hospitals: {
+        Row: {
+          id: string;
+          name: string;
+          code: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['hospitals']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['hospitals']['Insert']>;
+        Relationships: never[];
       };
       departments: {
         Row: {
@@ -156,6 +181,7 @@ export interface Database {
           no_show_seconds?: number;
         };
         Update: Partial<Database['public']['Tables']['departments']['Insert']>;
+        Relationships: never[];
       };
       routing_rules: {
         Row: {
@@ -176,6 +202,7 @@ export interface Database {
           priority?: number;
         };
         Update: Partial<Database['public']['Tables']['routing_rules']['Insert']>;
+        Relationships: never[];
       };
       queue_tickets: {
         Row: {
@@ -195,6 +222,9 @@ export interface Database {
           cancelled_at: string | null;
           no_show_at: string | null;
           patient_token_hash: string;
+          otp_code_hash: string | null;
+          otp_expires_at: string | null;
+          otp_attempts: number;
           called_by: string | null;
           completed_by: string | null;
         };
@@ -211,11 +241,15 @@ export interface Database {
           | 'completed_by'
           | 'priority'
           | 'state'
+          | 'otp_code_hash'
+          | 'otp_expires_at'
+          | 'otp_attempts'
         > & {
           priority?: number;
           state?: TicketState;
         };
         Update: Partial<Database['public']['Tables']['queue_tickets']['Insert']>;
+        Relationships: never[];
       };
       queue_ticket_events: {
         Row: {
@@ -231,6 +265,59 @@ export interface Database {
           'id' | 'occurred_at'
         >;
         Update: Partial<Database['public']['Tables']['queue_ticket_events']['Insert']>;
+        Relationships: never[];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      create_walkin_ticket: {
+        Args: {
+          p_hospital_code: string;
+          p_symptom_code: string;
+          p_severity: string;
+          p_phone_e164: string;
+          p_locale?: string;
+        };
+        Returns: Array<{
+          ticket_id: string;
+          ticket_number: number;
+          department_code: string;
+          department_name_th: string;
+          department_name_en: string;
+          position_in_queue: number;
+          patient_token: string;
+          otp_code: string;
+        }>;
+      };
+      verify_walkin_ticket: {
+        Args: { p_ticket_id: string; p_otp_code: string };
+        Returns: Array<{ ok: boolean }>;
+      };
+      cancel_walkin_ticket: {
+        Args: { p_ticket_id: string; p_patient_token: string };
+        Returns: Array<{ ok: boolean }>;
+      };
+      call_next_ticket: {
+        Args: { p_department_id: string };
+        Returns: Array<{
+          ticket_id: string | null;
+          ticket_number: number | null;
+          symptom_code: string | null;
+          severity: string | null;
+          waited_seconds: number | null;
+        }>;
+      };
+      mark_ticket_done: {
+        Args: { p_ticket_id: string };
+        Returns: undefined;
+      };
+      mark_ticket_no_show: {
+        Args: { p_ticket_id: string };
+        Returns: undefined;
+      };
+      current_hospital_id: {
+        Args: Record<string, never>;
+        Returns: string;
       };
     };
   };
