@@ -28,10 +28,10 @@ DECLARE
 BEGIN
   v_token_hash := encode(extensions.digest(p_patient_token, 'sha256'), 'hex');
 
-  SELECT id, department_id, priority, ticket_number, state, patient_token_hash
+  SELECT t.id, t.department_id, t.priority, t.ticket_number, t.state, t.patient_token_hash
     INTO v_ticket
-    FROM queue_tickets
-   WHERE id = p_ticket_id;
+    FROM queue_tickets t
+   WHERE t.id = p_ticket_id;
 
   IF NOT FOUND OR v_ticket.patient_token_hash <> v_token_hash THEN
     RAISE EXCEPTION 'ticket_not_found_or_token_mismatch'

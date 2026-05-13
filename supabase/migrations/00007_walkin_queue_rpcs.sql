@@ -66,13 +66,19 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  -- 3. Per-(hospital, dept, day) ticket number
-  SELECT COALESCE(MAX(ticket_number), 0) + 1
+  -- 3. Per-(hospital, dept, day) ticket number.
+  -- Uses the same IMMUTABLE day boundary as idx_queue_tickets_daily_number
+  -- so this counter stays consistent with the uniqueness constraint
+  -- regardless of session timezone.
+  -- Table alias `t` is required because `ticket_number` is also a RETURNS
+  -- TABLE OUT parameter on this function — bare column references would
+  -- otherwise be ambiguous in PL/pgSQL scope.
+  SELECT COALESCE(MAX(t.ticket_number), 0) + 1
     INTO v_ticket_number
-    FROM queue_tickets
-   WHERE hospital_id  = v_hospital_id
-     AND department_id = v_department_id
-     AND created_at::date = CURRENT_DATE;
+    FROM queue_tickets t
+   WHERE t.hospital_id  = v_hospital_id
+     AND t.department_id = v_department_id
+     AND ticket_day(t.created_at) = ticket_day(NOW());
 
   -- 4. Generate token and OTP
   v_token := encode(gen_random_bytes(24), 'base64');

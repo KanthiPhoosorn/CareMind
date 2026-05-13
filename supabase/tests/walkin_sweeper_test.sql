@@ -18,7 +18,21 @@ VALUES
    'TEST', 'ทดสอบ', 'Test Dept', 60)
 ON CONFLICT (id) DO NOTHING;
 
--- Staff actor for the called_by reference
+-- Staff actor for the called_by reference. profiles.id FKs to auth.users
+-- so we need both rows. Minimum non-null columns mirror what other test
+-- fixtures use; an empty encrypted_password is fine because we never sign in.
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data
+) VALUES (
+  '33333333-3333-3333-3333-333333333331',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated',
+  'sweeper-actor@test.local', '',
+  NOW(), NOW(), NOW(), '{}'::jsonb, '{}'::jsonb
+) ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO profiles (id, email, full_name, role, hospital_id)
 VALUES ('33333333-3333-3333-3333-333333333331',
         'sweeper-actor@test.local', 'Sweeper Actor', 'doctor',
