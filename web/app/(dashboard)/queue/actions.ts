@@ -15,6 +15,7 @@ import { resolveSmsProvider, ticketCalledMessage } from '@/lib/sms';
 
 interface TicketContact {
   phone_e164: string;
+  line_user_id: string | null;
   department: {
     name_en: string;
     name_th: string;
@@ -26,7 +27,7 @@ async function loadDispatchContext(
   ticketId: string,
 ): Promise<TicketContact | null> {
   const { data, error } = await dbFrom(supabase, 'queue_tickets')
-    .select('phone_e164, department:departments(name_en, name_th)')
+    .select('phone_e164, line_user_id, department:departments(name_en, name_th)')
     .eq('id', ticketId)
     .maybeSingle();
   if (error) return null;
@@ -56,11 +57,20 @@ export async function callNextTicketAction(departmentId: string) {
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.ticket_id || !row.ticket_number) return row ?? null;
 
-  // Best-effort SMS dispatch. We deliberately swallow provider errors and log
+  // Best-effort dispatch. We deliberately swallow provider errors and log
   // them so the staff-side state remains 'called'. The dispatch_log row gives
   // ops a way to retry or investigate.
+  //
+  // Address resolution:
+  //   * SMS_PROVIDER=line AND ticket.line_user_id present → push via LINE.
+  //   * SMS_PROVIDER=line AND ticket.line_user_id missing → log a skipped
+  //     dispatch row so ops can see the LINE link is incomplete for this
+  //     patient (the LINE OA webhook hasn't matched them to a phone yet).
+  //     The queue itself still works — Realtime pushes the 'called' state
+  //     to the patient's open ticket page within ~1s.
+  //   * Any other provider → use ticket.phone_e164.
   const ctx = await loadDispatchContext(supabase, row.ticket_id);
-  if (ctx?.phone_e164 && ctx.department) {
+  if (ctx?.department) {
     const provider = resolveSmsProvider();
     const body = ticketCalledMessage(
       row.ticket_number,
@@ -68,11 +78,27 @@ export async function callNextTicketAction(departmentId: string) {
       ctx.department.name_th,
       'th',
     );
-    try {
-      const result = await provider.send(ctx.phone_e164, body, 'th');
+
+    if (provider.key === 'line' && !ctx.line_user_id) {
       await logDispatch(supabase, {
         ticket_id: row.ticket_id,
         to_phone: ctx.phone_e164,
+        body,
+        provider: 'line',
+        message_id: null,
+        error: 'skipped: no line_user_id on ticket',
+      });
+      return row;
+    }
+
+    const address = provider.key === 'line' ? ctx.line_user_id! : ctx.phone_e164;
+    if (!address) return row;
+
+    try {
+      const result = await provider.send(address, body, 'th');
+      await logDispatch(supabase, {
+        ticket_id: row.ticket_id,
+        to_phone: address,
         body,
         provider: result.provider,
         message_id: result.messageId,
@@ -81,7 +107,7 @@ export async function callNextTicketAction(departmentId: string) {
     } catch (e) {
       await logDispatch(supabase, {
         ticket_id: row.ticket_id,
-        to_phone: ctx.phone_e164,
+        to_phone: address,
         body,
         provider: provider.key,
         message_id: null,
