@@ -83,6 +83,53 @@ INSERT INTO departments (id, hospital_id, code, name_th, name_en, no_show_second
    '00000000-0000-0000-0000-000000000001', 'ER',     'ฉุกเฉิน',     'Emergency',         120)
 ON CONFLICT DO NOTHING;
 
+-- =====================================================================
+-- Demo staff user for /login dev sign-in (Phase A of walk-in queue plan).
+-- Email:    staff@demo.caremind.local
+-- Password: caremind-dev
+-- pgcrypto is enabled via the `extensions` schema in migration 00006,
+-- so crypt()/gen_salt() are qualified explicitly.
+-- =====================================================================
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, recovery_sent_at, last_sign_in_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, email_change, email_change_token_new, recovery_token
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  '99999999-9999-9999-9999-999999999991',
+  'authenticated',
+  'authenticated',
+  'staff@demo.caremind.local',
+  extensions.crypt('caremind-dev', extensions.gen_salt('bf')),
+  NOW(), NOW(), NOW(),
+  '{"provider":"email","providers":["email"]}',
+  '{}',
+  NOW(), NOW(),
+  '', '', '', ''
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, provider_id, user_id, identity_data, provider,
+  last_sign_in_at, created_at, updated_at
+) VALUES (
+  '99999999-9999-9999-9999-999999999992',
+  '99999999-9999-9999-9999-999999999991',
+  '99999999-9999-9999-9999-999999999991',
+  '{"sub":"99999999-9999-9999-9999-999999999991","email":"staff@demo.caremind.local","email_verified":true}',
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO profiles (id, email, full_name, role, hospital_id)
+VALUES (
+  '99999999-9999-9999-9999-999999999991',
+  'staff@demo.caremind.local',
+  'Demo Staff',
+  'doctor',
+  '00000000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
+
 -- Routing rules: (symptom_code, severity → department). NULL severity = any.
 -- `priority` ASC = first match wins.
 INSERT INTO routing_rules (hospital_id, symptom_code, severity, target_department_id, priority) VALUES
