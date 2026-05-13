@@ -40,6 +40,13 @@ export async function callRpc<FnName extends keyof DbFunctions>(
   fn: FnName,
   args: DbFunctions[FnName]['Args'],
 ): Promise<{ data: DbFunctions[FnName]['Returns'] | null; error: Error | null }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (supabase as any).rpc(fn, args);
+}
+
+// Sibling escape hatch for raw .from()/.select() queries. Same reason as
+// callRpc: our handwritten Database type can't carry generic row inference.
+// Callers cast the returned data to their literal row shape.
+
+export function dbFrom(supabase: { from: (table: string) => any }, table: string): any {
+  return supabase.from(table);
 }

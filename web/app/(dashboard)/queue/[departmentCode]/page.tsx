@@ -1,8 +1,11 @@
-// M2 staff dashboard: per-department queue board.
-// initialTickets is passed as a prop so WalkinQueueBoard can manage
-// optimistic state client-side without refetching on every action.
+// M3b staff dashboard: per-department queue board, real data.
+// We resolve the dept by code (scoped to the staff's hospital via RLS),
+// 404 if it doesn't exist, then prefetch active tickets and hand both to
+// WalkinQueueBoard. The board owns optimistic state + Realtime subscription.
 import { notFound } from 'next/navigation';
-import { MOCK_DEPARTMENTS, getMockTickets } from '@/lib/mock-queue-data';
+import { createClient } from '@/lib/supabase/server';
+import { findDepartmentByCode } from '@/lib/queries/departments';
+import { listActiveTickets } from '@/lib/queries/queue-tickets';
 import { WalkinQueueBoard } from '@/components/ui/WalkinQueueBoard';
 
 interface Props {
@@ -11,10 +14,11 @@ interface Props {
 
 export default async function QueueDeptPage({ params }: Props) {
   const { departmentCode } = await params;
-  const dept = MOCK_DEPARTMENTS.find(d => d.code === departmentCode);
+  const supabase = await createClient();
+  const dept = await findDepartmentByCode(supabase, departmentCode);
   if (!dept) notFound();
 
-  const tickets = getMockTickets(departmentCode);
+  const tickets = await listActiveTickets(supabase, dept.id);
 
   return <WalkinQueueBoard department={dept} initialTickets={tickets} />;
 }
