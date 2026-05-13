@@ -319,6 +319,22 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string;
       };
+      estimate_wait_minutes: {
+        Args: { p_department_id: string; p_position: number };
+        Returns: number;
+      };
+      sweep_stale_called_tickets: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      get_ticket_wait_estimate: {
+        Args: { p_ticket_id: string; p_patient_token: string };
+        Returns: Array<{
+          state: string;
+          position_in_queue: number;
+          estimated_wait_minutes: number;
+        }>;
+      };
     };
   };
 }

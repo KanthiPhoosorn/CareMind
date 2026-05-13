@@ -48,3 +48,28 @@ export async function cancelTicket(ticketId: string, patientToken: string) {
   const row = Array.isArray(data) ? data[0] : data;
   return row?.ok ?? false;
 }
+
+export interface TicketWaitEstimate {
+  state: string;
+  positionInQueue: number;
+  estimatedWaitMinutes: number;
+}
+
+export async function getTicketWaitEstimate(
+  ticketId: string,
+  patientToken: string,
+): Promise<TicketWaitEstimate | null> {
+  const supabase = await createClient();
+  const { data, error } = await callRpc(supabase, 'get_ticket_wait_estimate', {
+    p_ticket_id: ticketId,
+    p_patient_token: patientToken,
+  });
+  if (error) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return {
+    state: row.state,
+    positionInQueue: row.position_in_queue,
+    estimatedWaitMinutes: row.estimated_wait_minutes,
+  };
+}

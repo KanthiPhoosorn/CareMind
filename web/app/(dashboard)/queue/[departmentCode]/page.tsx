@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { findDepartmentByCode } from '@/lib/queries/departments';
 import { listActiveTickets } from '@/lib/queries/queue-tickets';
+import { departmentStatsToday } from '@/lib/queries/wait-time';
 import { WalkinQueueBoard } from '@/components/ui/WalkinQueueBoard';
 
 interface Props {
@@ -18,7 +19,10 @@ export default async function QueueDeptPage({ params }: Props) {
   const dept = await findDepartmentByCode(supabase, departmentCode);
   if (!dept) notFound();
 
-  const tickets = await listActiveTickets(supabase, dept.id);
+  const [tickets, stats] = await Promise.all([
+    listActiveTickets(supabase, dept.id),
+    departmentStatsToday(supabase, dept.id),
+  ]);
 
-  return <WalkinQueueBoard department={dept} initialTickets={tickets} />;
+  return <WalkinQueueBoard department={dept} initialTickets={tickets} initialStats={stats} />;
 }

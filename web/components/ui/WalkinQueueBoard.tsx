@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import type { Department } from '@/lib/queries/departments';
 import type { QueueTicket } from '@/lib/queries/queue-tickets';
 import { waitedMinutes } from '@/lib/queries/queue-tickets';
+import type { DepartmentStats } from '@/lib/queries/wait-time';
 import { createClient } from '@/lib/supabase/client';
 import {
   callNextTicketAction,
@@ -49,6 +50,7 @@ const SEV_BG: Record<TriageSeverity, string> = {
 interface Props {
   department: Department;
   initialTickets: QueueTicket[];
+  initialStats?: DepartmentStats | null;
 }
 
 // The realtime payload shape we care about. The supabase-js types are loose
@@ -80,8 +82,9 @@ function severityToPriority(s: TriageSeverity): number {
   return s === 'severe' ? 10 : s === 'moderate' ? 50 : 100;
 }
 
-export function WalkinQueueBoard({ department, initialTickets }: Props) {
+export function WalkinQueueBoard({ department, initialTickets, initialStats }: Props) {
   const [tickets, setTickets] = useState<QueueTicket[]>(() => sortQueue(initialTickets));
+  const stats = initialStats ?? null;
   const [error, setError] = useState('');
   const [pending, startTransition] = useTransition();
   const now = useNow(30_000);
@@ -220,7 +223,66 @@ export function WalkinQueueBoard({ department, initialTickets }: Props) {
             : `Call next  ·  ${waiting.length} waiting`}
       </button>
 
+      {stats && <StatsStrip stats={stats} />}
+
       {waiting.length > 0 && <WaitingList tickets={waiting} now={now} />}
+    </div>
+  );
+}
+
+function StatsStrip({ stats }: { stats: DepartmentStats }) {
+  const cells: Array<{ label: string; value: string }> = [
+    { label: 'Done today', value: String(stats.calls_done_today) },
+    { label: 'No-shows today', value: String(stats.no_shows_today) },
+    {
+      label: 'Avg wait today',
+      value: stats.avg_wait_minutes_today != null ? `${stats.avg_wait_minutes_today}m` : '—',
+    },
+  ];
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 0,
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--r-lg)',
+        boxShadow: 'var(--shadow-card)',
+        overflow: 'hidden',
+      }}
+    >
+      {cells.map((c, idx) => (
+        <div
+          key={c.label}
+          style={{
+            padding: '12px 16px',
+            borderLeft: idx === 0 ? '0' : '1px solid var(--divider)',
+            textAlign: 'left',
+          }}
+        >
+          <div
+            style={{
+              font: '500 11px/1 var(--font-ui)',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--fg3)',
+            }}
+          >
+            {c.label}
+          </div>
+          <div
+            style={{
+              font: '700 22px/1.1 var(--font-ui)',
+              color: 'var(--fg1)',
+              marginTop: 4,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {c.value}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
