@@ -15,7 +15,14 @@ export type SymptomCode = (typeof SYMPTOM_CODES)[number];
 export const SEVERITIES = ['mild', 'moderate', 'severe'] as const;
 export type TriageSeverity = (typeof SEVERITIES)[number];
 
-export const TICKET_STATES = ['waiting', 'called', 'done', 'no_show', 'cancelled'] as const;
+export const TICKET_STATES = [
+  'pending_triage',
+  'waiting',
+  'called',
+  'done',
+  'no_show',
+  'cancelled',
+] as const;
 export type TicketState = (typeof TICKET_STATES)[number];
 
 // TriageSeverity → priority (lower = served sooner). See spec §3.2.

@@ -24,8 +24,15 @@ describe('queue domain types', () => {
     expect(SEVERITIES).toEqual(['mild', 'moderate', 'severe']);
   });
 
-  it('lists five ticket states', () => {
-    expect(TICKET_STATES).toEqual(['waiting', 'called', 'done', 'no_show', 'cancelled']);
+  it('lists six ticket states including pending_triage', () => {
+    expect(TICKET_STATES).toEqual([
+      'pending_triage',
+      'waiting',
+      'called',
+      'done',
+      'no_show',
+      'cancelled',
+    ]);
   });
 
   it('maps severity to monotonically decreasing priority values', () => {

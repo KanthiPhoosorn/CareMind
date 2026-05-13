@@ -108,3 +108,17 @@ export async function markTicketNoShowAction(ticketId: string) {
   });
   if (error) throw new Error(error.message);
 }
+
+export async function triageTicketAction(
+  ticketId: string,
+  severity: 'mild' | 'moderate' | 'severe',
+) {
+  const supabase = await createClient();
+  const { data, error } = await callRpc(supabase, 'triage_walkin_ticket', {
+    p_ticket_id: ticketId,
+    p_severity: severity,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ?? null;
+}

@@ -157,15 +157,15 @@ export default function TicketPage() {
             color: 'var(--brand-primary)',
           }}
         >
-          {ticket.ticketNumber}
+          {waitEstimate?.currentTicketNumber ?? ticket.ticketNumber}
         </div>
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ font: '600 16px/1.2 var(--font-ui)', color: 'var(--fg1)' }}>
-            {ticket.departmentNameEn}
+            {waitEstimate?.currentDepartmentNameEn ?? ticket.departmentNameEn}
           </div>
           <div style={{ font: '400 14px/1.4 var(--font-ui)', color: 'var(--fg3)', marginTop: 2 }}>
-            {ticket.departmentNameTh}
+            {waitEstimate?.currentDepartmentNameTh ?? ticket.departmentNameTh}
           </div>
         </div>
 
@@ -207,6 +207,21 @@ export default function TicketPage() {
               }}
             >
               Now serving · คิวของคุณแล้ว
+            </div>
+          )}
+          {waitEstimate?.state === 'pending_triage' && (
+            <div
+              style={{
+                marginTop: 8,
+                padding: '8px 14px',
+                background: 'var(--sev-info-bg)',
+                borderRadius: 'var(--r-pill)',
+                font: '600 13px/1.2 var(--font-ui)',
+                color: 'var(--brand-primary)',
+                display: 'inline-block',
+              }}
+            >
+              Waiting for triage · รอประเมินคัดกรอง
             </div>
           )}
         </div>

@@ -54,6 +54,7 @@ export function Sidebar({ role, view, setView }: SidebarProps) {
       : [
           ['patients', 'users', 'Patients'],
           ['walkin', 'list-ordered', 'Walk-in Queue'],
+          ['triage', 'alert-triangle', 'Triage'],
           ['rounds', 'clipboard-list', 'My rounds'],
           ['ai', 'sparkles', 'AI consult'],
           ['orders', 'file-text', 'Orders'],

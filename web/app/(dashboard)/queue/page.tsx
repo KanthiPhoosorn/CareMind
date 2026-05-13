@@ -1,13 +1,21 @@
 // M3b staff dashboard: department selector for the walk-in queue.
 // Fetches the caller's hospital departments via RLS (current_hospital_id())
-// and renders a card grid. Each card links to /queue/[code].
+// and renders a card grid. A separate "Triage" card sits above the grid
+// because triage is its own workflow (assigns severity, doesn't pick next).
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { listDepartments } from '@/lib/queries/departments';
+import { dbFrom } from '@/lib/supabase/server';
 
 export default async function QueueIndexPage() {
   const supabase = await createClient();
   const departments = await listDepartments(supabase);
+
+  // Count pending_triage tickets so the Triage card can show a badge.
+  const { data: pendingRows } = await dbFrom(supabase, 'queue_tickets')
+    .select('id')
+    .eq('state', 'pending_triage');
+  const pendingTriageCount = Array.isArray(pendingRows) ? pendingRows.length : 0;
 
   return (
     <div style={{ padding: '32px 24px' }}>
@@ -23,6 +31,53 @@ export default async function QueueIndexPage() {
           Select a department to manage its queue
         </p>
       </div>
+
+      <Link href="/queue/triage" style={{ textDecoration: 'none' }}>
+        <div
+          style={{
+            padding: '20px 24px',
+            marginBottom: 24,
+            background: 'linear-gradient(135deg, var(--sev-warning-bg), var(--bg-surface))',
+            border: '1px solid var(--sev-warning)',
+            borderRadius: 'var(--r-lg)',
+            boxShadow: 'var(--shadow-card)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            maxWidth: 800,
+          }}
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: 'var(--sev-warning)',
+              color: '#fff',
+              display: 'grid',
+              placeItems: 'center',
+              font: '700 18px/1 var(--font-ui)',
+            }}
+          >
+            T
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ font: '600 16px/1.2 var(--font-ui)', color: 'var(--fg1)' }}>
+              Triage · จุดคัดกรอง
+            </div>
+            <div style={{ font: '400 13px/1.4 var(--font-ui)', color: 'var(--fg3)', marginTop: 2 }}>
+              Assign severity to new arrivals before they enter the OPD queue
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ font: '700 28px/1 var(--font-ui)', color: 'var(--sev-warning)' }}>
+              {pendingTriageCount}
+            </div>
+            <div style={{ font: '400 11px/1 var(--font-ui)', color: 'var(--fg3)' }}>waiting</div>
+          </div>
+        </div>
+      </Link>
 
       {departments.length === 0 ? (
         <div

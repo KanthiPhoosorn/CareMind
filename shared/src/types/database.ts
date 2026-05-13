@@ -212,7 +212,7 @@ export interface Database {
           ticket_number: number;
           phone_e164: string;
           symptom_code: SymptomCode;
-          severity: TriageSeverity;
+          severity: TriageSeverity | null;
           priority: number;
           state: TicketState;
           created_at: string;
@@ -274,7 +274,6 @@ export interface Database {
         Args: {
           p_hospital_code: string;
           p_symptom_code: string;
-          p_severity: string;
           p_phone_e164: string;
           p_locale?: string;
         };
@@ -287,6 +286,17 @@ export interface Database {
           position_in_queue: number;
           patient_token: string;
           otp_code: string;
+        }>;
+      };
+      triage_walkin_ticket: {
+        Args: { p_ticket_id: string; p_severity: string };
+        Returns: Array<{
+          ticket_id: string;
+          ticket_number: number;
+          department_code: string;
+          department_name_th: string;
+          department_name_en: string;
+          severity: string;
         }>;
       };
       verify_walkin_ticket: {
@@ -333,6 +343,10 @@ export interface Database {
           state: string;
           position_in_queue: number;
           estimated_wait_minutes: number;
+          current_ticket_number: number;
+          current_department_code: string;
+          current_department_name_th: string;
+          current_department_name_en: string;
         }>;
       };
     };

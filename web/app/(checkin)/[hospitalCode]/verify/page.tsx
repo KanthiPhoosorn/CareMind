@@ -16,7 +16,6 @@ function VerifyContent() {
   const { hospitalCode } = useParams<{ hospitalCode: string }>();
   const searchParams = useSearchParams();
   const symptom = searchParams.get('symptom') ?? 'other';
-  const severity = searchParams.get('severity') ?? 'mild';
 
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
@@ -31,7 +30,7 @@ function VerifyContent() {
     setError('');
     setLoading(true);
     try {
-      const ticket = await createTicket(hospitalCode, symptom, severity, phone);
+      const ticket = await createTicket(hospitalCode, symptom, phone);
       localStorage.setItem(
         `ticket:${ticket.ticket_id}`,
         JSON.stringify({
@@ -92,33 +91,54 @@ function VerifyContent() {
     cursor: 'pointer',
   };
 
-  const disabledBtn: React.CSSProperties = { ...primaryBtn, background: 'var(--fg4)', cursor: 'default' };
+  const disabledBtn: React.CSSProperties = {
+    ...primaryBtn,
+    background: 'var(--fg4)',
+    cursor: 'default',
+  };
 
   return (
-    <div style={{ maxWidth: 400, width: '100%', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div
+      style={{ maxWidth: 400, width: '100%', display: 'flex', flexDirection: 'column', gap: 24 }}
+    >
       {step === 'phone' ? (
         <>
           <div>
-            <div style={{ font: '700 22px/1.2 var(--font-ui)', letterSpacing: '-0.01em', color: 'var(--fg1)' }}>
+            <div
+              style={{
+                font: '700 22px/1.2 var(--font-ui)',
+                letterSpacing: '-0.01em',
+                color: 'var(--fg1)',
+              }}
+            >
               Enter your phone number
             </div>
             <div style={{ font: '400 14px/1.5 var(--font-ui)', color: 'var(--fg3)', marginTop: 4 }}>
               เราจะส่งรหัส OTP ไปยังเบอร์ของคุณ
             </div>
           </div>
-          <form onSubmit={handlePhoneSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form
+            onSubmit={handlePhoneSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+          >
             <input
               type="tel"
               value={phone}
-              onChange={e => setPhone(e.target.value)}
+              onChange={(e) => setPhone(e.target.value)}
               placeholder="+66 8X XXX XXXX"
               required
               style={{ ...inputStyle, font: '400 16px/1 var(--font-ui)' }}
             />
             {error && (
-              <div style={{ font: '400 13px/1.4 var(--font-ui)', color: 'var(--sev-critical)' }}>{error}</div>
+              <div style={{ font: '400 13px/1.4 var(--font-ui)', color: 'var(--sev-critical)' }}>
+                {error}
+              </div>
             )}
-            <button type="submit" disabled={loading || !phone} style={loading || !phone ? disabledBtn : primaryBtn}>
+            <button
+              type="submit"
+              disabled={loading || !phone}
+              style={loading || !phone ? disabledBtn : primaryBtn}
+            >
               {loading ? 'Sending OTP…' : 'Send OTP'}
             </button>
           </form>
@@ -126,41 +146,84 @@ function VerifyContent() {
       ) : (
         <>
           <div>
-            <div style={{ font: '700 22px/1.2 var(--font-ui)', letterSpacing: '-0.01em', color: 'var(--fg1)' }}>
+            <div
+              style={{
+                font: '700 22px/1.2 var(--font-ui)',
+                letterSpacing: '-0.01em',
+                color: 'var(--fg1)',
+              }}
+            >
               Enter the OTP
             </div>
             <div style={{ font: '400 14px/1.5 var(--font-ui)', color: 'var(--fg3)', marginTop: 4 }}>
               กรอกรหัส 6 หลักที่ส่งไปยัง {phone}
             </div>
             {devOtp && (
-              <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--sev-warning-bg)', border: '1px solid #f59e0b66', borderRadius: 'var(--r-md)', font: '500 12px/1.4 var(--font-ui)', color: 'var(--fg2)' }}>
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: '10px 14px',
+                  background: 'var(--sev-warning-bg)',
+                  border: '1px solid #f59e0b66',
+                  borderRadius: 'var(--r-md)',
+                  font: '500 12px/1.4 var(--font-ui)',
+                  color: 'var(--fg2)',
+                }}
+              >
                 Dev mode — OTP:{' '}
-                <span style={{ font: '700 14px/1 var(--font-mono)', letterSpacing: '0.12em' }}>{devOtp}</span>
+                <span style={{ font: '700 14px/1 var(--font-mono)', letterSpacing: '0.12em' }}>
+                  {devOtp}
+                </span>
               </div>
             )}
           </div>
-          <form onSubmit={handleOtpSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form
+            onSubmit={handleOtpSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+          >
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]{6}"
               maxLength={6}
               value={otp}
-              onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
               required
-              style={{ ...inputStyle, font: '700 28px/1 var(--font-mono)', letterSpacing: '0.2em', textAlign: 'center' }}
+              style={{
+                ...inputStyle,
+                font: '700 28px/1 var(--font-mono)',
+                letterSpacing: '0.2em',
+                textAlign: 'center',
+              }}
             />
             {error && (
-              <div style={{ font: '400 13px/1.4 var(--font-ui)', color: 'var(--sev-critical)' }}>{error}</div>
+              <div style={{ font: '400 13px/1.4 var(--font-ui)', color: 'var(--sev-critical)' }}>
+                {error}
+              </div>
             )}
-            <button type="submit" disabled={loading || otp.length < 6} style={loading || otp.length < 6 ? disabledBtn : primaryBtn}>
+            <button
+              type="submit"
+              disabled={loading || otp.length < 6}
+              style={loading || otp.length < 6 ? disabledBtn : primaryBtn}
+            >
               {loading ? 'Verifying…' : 'Verify & get ticket'}
             </button>
             <button
               type="button"
-              onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
-              style={{ padding: '10px', background: 'none', border: 0, font: '400 13px/1 var(--font-ui)', color: 'var(--fg3)', cursor: 'pointer' }}
+              onClick={() => {
+                setStep('phone');
+                setOtp('');
+                setError('');
+              }}
+              style={{
+                padding: '10px',
+                background: 'none',
+                border: 0,
+                font: '400 13px/1 var(--font-ui)',
+                color: 'var(--fg3)',
+                cursor: 'pointer',
+              }}
             >
               ← Change phone number
             </button>

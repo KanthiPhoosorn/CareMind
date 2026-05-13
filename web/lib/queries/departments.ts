@@ -13,9 +13,14 @@ export interface Department {
 type AnyClient = { from: (table: string) => unknown };
 
 export async function listDepartments(supabase: AnyClient): Promise<Department[]> {
+  // TRIAGE is its own surface in the dashboard (/queue/triage) — keep it out
+  // of the OPD department grid so staff don't accidentally try to "Call next"
+  // on the triage queue, which wouldn't work (those tickets are
+  // pending_triage, not waiting).
   const { data, error } = await dbFrom(supabase, 'departments')
     .select('id, code, name_th, name_en')
     .eq('is_active', true)
+    .neq('code', 'TRIAGE')
     .order('code');
 
   if (error) throw new Error(error.message);
