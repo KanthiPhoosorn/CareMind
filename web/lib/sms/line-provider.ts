@@ -1,13 +1,17 @@
-// LINE Messaging API provider. Sends a text message to a single LINE userId
-// via the v2 push endpoint. Free tier (~1000 messages/month for verified
-// Official Accounts) is enough for an early-stage rollout in Thailand.
+// LINE SmsProvider — a thin adapter so resolveSmsProvider() in ./index.ts can
+// treat LINE like any other SMS provider. The actual HTTP call lives in
+// web/lib/line/messaging.ts, shared with the webhook's replyMessage().
 //
-// The `to` argument is treated as a LINE userId (U + 32 hex), NOT a phone
-// number. The dispatcher in app/(dashboard)/queue/actions.ts picks which
-// address to pass based on ticket.line_user_id presence.
+// Despite the SMS_PROVIDER name, "line" addresses recipients by LINE userId
+// (U + 32 hex), not phone — the dispatcher in app/(dashboard)/queue/actions.ts
+// picks the right address per ticket.
+//
+// createLineProvider still takes (and validates) channelAccessToken: that
+// early, loud failure is what resolveSmsProvider()'s fallback-to-dev relies
+// on. messaging.pushMessage reads the env var itself so the webhook path
+// works too.
 import type { SmsProvider, SmsSendResult } from './provider';
-
-const LINE_PUSH_URL = 'https://api.line.me/v2/bot/message/push';
+import { pushMessage } from '@/lib/line/messaging';
 
 export function createLineProvider(channelAccessToken: string): SmsProvider {
   if (!channelAccessToken) {
@@ -16,23 +20,8 @@ export function createLineProvider(channelAccessToken: string): SmsProvider {
   return {
     key: 'line',
     async send(to: string, body: string): Promise<SmsSendResult> {
-      const res = await fetch(LINE_PUSH_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${channelAccessToken}`,
-        },
-        body: JSON.stringify({
-          to,
-          messages: [{ type: 'text', text: body }],
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(`LINE push failed (${res.status}): ${text || res.statusText}`);
-      }
-      const xLineRequestId = res.headers.get('x-line-request-id') ?? `line-${Date.now()}`;
-      return { messageId: xLineRequestId, provider: 'line' };
+      const { messageId } = await pushMessage(to, body);
+      return { messageId, provider: 'line' };
     },
   };
 }
