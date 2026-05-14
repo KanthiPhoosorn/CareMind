@@ -1,7 +1,7 @@
 -- Guards migration 00014: the line_link_code column, the link_line_user_id
 -- RPC, and the two columns added to get_ticket_wait_estimate.
 BEGIN;
-SELECT plan(14);
+SELECT plan(16);
 
 -- ---- column shape -------------------------------------------------------
 SELECT has_column('public', 'queue_tickets', 'line_link_code',
@@ -44,6 +44,17 @@ INSERT INTO queue_tickets (id, hospital_id, department_id, ticket_number,
           2, '+66810000002', 'cough', 'mild', 100, 'done',
           encode(extensions.digest('llk-tok-2', 'sha256'), 'hex'),
           'DONE0001');
+
+-- A pending_triage ticket. severity MUST be NULL (schema constraint).
+-- line_link_code left to DEFAULT so we can read it back in assertions 15–16.
+INSERT INTO queue_tickets (id, hospital_id, department_id, ticket_number,
+                           phone_e164, symptom_code, severity, priority,
+                           state, patient_token_hash)
+  VALUES ('7a000000-3333-3333-3333-333333333333',
+          '7a000000-0000-0000-0000-000000000000',
+          '7a000000-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          3, '+66810000003', 'cough', NULL, 100, 'pending_triage',
+          encode(extensions.digest('llk-tok-3', 'sha256'), 'hex'));
 
 -- 5. the DEFAULT produced an 8-char uppercase-hex code on the waiting ticket
 SELECT ok(
@@ -127,6 +138,28 @@ SELECT is(
      '7a000000-1111-1111-1111-111111111111'::uuid, 'llk-tok-1')),
   'U00000000000000000000000000000001',
   'get_ticket_wait_estimate returns the linked line_user_id'
+);
+
+-- 15. M1: link_line_user_id works for a pending_triage ticket (most common
+--     moment a patient taps the LINE button — right after check-in).
+SELECT is(
+  (SELECT reason FROM link_line_user_id(
+     (SELECT line_link_code FROM queue_tickets
+        WHERE id = '7a000000-3333-3333-3333-333333333333'),
+     'U00000000000000000000000000000003')),
+  'linked',
+  'link_line_user_id on a pending_triage ticket returns reason=linked'
+);
+
+-- 16. M2: the linked-path call returns the correct ticket_number so the
+--     webhook can compose its reply message.
+SELECT is(
+  (SELECT ticket_number FROM link_line_user_id(
+     (SELECT line_link_code FROM queue_tickets
+        WHERE id = '7a000000-3333-3333-3333-333333333333'),
+     'U00000000000000000000000000000003')),
+  3,
+  'link_line_user_id returns the correct ticket_number on the linked path'
 );
 
 SELECT * FROM finish();
