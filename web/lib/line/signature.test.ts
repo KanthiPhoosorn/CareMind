@@ -27,4 +27,14 @@ describe('verifyLineSignature', () => {
   it('rejects when the channel secret is empty', () => {
     expect(verifyLineSignature(BODY, sign(BODY, SECRET), '')).toBe(false);
   });
+
+  it('rejects a valid-length signature with wrong bytes', () => {
+    const correct = sign(BODY, SECRET);
+    const sameLength = correct.slice(0, -1) + (correct.endsWith('A') ? 'B' : 'A');
+    expect(verifyLineSignature(BODY, sameLength, SECRET)).toBe(false);
+  });
+
+  it('accepts a correct signature over an empty body', () => {
+    expect(verifyLineSignature('', sign('', SECRET), SECRET)).toBe(true);
+  });
 });
