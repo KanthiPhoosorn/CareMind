@@ -100,4 +100,90 @@ describe('POST /api/line/webhook', () => {
     expect(res.status).toBe(200);
     expect(callRpc).not.toHaveBeenCalled();
   });
+
+  it('replies with already_linked copy when patient re-sends the code', async () => {
+    callRpc.mockResolvedValue({
+      data: [
+        {
+          ok: true,
+          reason: 'already_linked',
+          ticket_number: 7,
+          department_name_th: 'อายุรกรรม',
+          department_name_en: 'Internal Medicine',
+          state: 'waiting',
+        },
+      ],
+      error: null,
+    });
+    const body = JSON.stringify({ events: [textEvent('LINK-A1B2C3D4')] });
+    const res = await POST(lineRequest(body));
+    expect(res.status).toBe(200);
+    expect(replyMessage).toHaveBeenCalledWith('reply-token-1', expect.stringContaining('อยู่แล้ว'));
+  });
+
+  it('replies with closed copy when the ticket is no longer active', async () => {
+    callRpc.mockResolvedValue({
+      data: [
+        {
+          ok: false,
+          reason: 'closed',
+          ticket_number: null,
+          department_name_th: null,
+          department_name_en: null,
+          state: null,
+        },
+      ],
+      error: null,
+    });
+    const body = JSON.stringify({ events: [textEvent('LINK-A1B2C3D4')] });
+    const res = await POST(lineRequest(body));
+    expect(res.status).toBe(200);
+    expect(replyMessage).toHaveBeenCalledWith(
+      'reply-token-1',
+      expect.stringContaining('สิ้นสุดแล้ว'),
+    );
+  });
+
+  it('replies with taken copy when the code is already linked to another account', async () => {
+    callRpc.mockResolvedValue({
+      data: [
+        {
+          ok: false,
+          reason: 'taken',
+          ticket_number: null,
+          department_name_th: null,
+          department_name_en: null,
+          state: null,
+        },
+      ],
+      error: null,
+    });
+    const body = JSON.stringify({ events: [textEvent('LINK-A1B2C3D4')] });
+    const res = await POST(lineRequest(body));
+    expect(res.status).toBe(200);
+    expect(replyMessage).toHaveBeenCalledWith(
+      'reply-token-1',
+      expect.stringContaining('บัญชี LINE อื่น'),
+    );
+  });
+
+  it('replies with not_found copy when the code matches no active ticket', async () => {
+    callRpc.mockResolvedValue({
+      data: [
+        {
+          ok: false,
+          reason: 'not_found',
+          ticket_number: null,
+          department_name_th: null,
+          department_name_en: null,
+          state: null,
+        },
+      ],
+      error: null,
+    });
+    const body = JSON.stringify({ events: [textEvent('LINK-A1B2C3D4')] });
+    const res = await POST(lineRequest(body));
+    expect(res.status).toBe(200);
+    expect(replyMessage).toHaveBeenCalledWith('reply-token-1', expect.stringContaining('ไม่พบคิว'));
+  });
 });

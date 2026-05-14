@@ -332,6 +332,18 @@ nothing in the build waits on these values.
 | One event in a batch throws                     | Caught per-event; remaining events still processed; `200` returned       |
 | `NEXT_PUBLIC_LINE_OA_ID` unset                  | Ticket page renders no LINE block; rest of the page unaffected           |
 
+### Enumeration oracle note
+
+`link_line_user_id` is `anon`-callable, and the RPC returns distinguishable
+`linked` / `already_linked` / `taken` / `not_found` responses, which
+constitutes a weak enumeration oracle over the `line_link_code` space. This is
+acceptable at the current product stage: the 16^8 (~4.3 billion) code space
+against a window of at most a few hundred active tickets makes brute force
+impractical, and the worst-case outcome of a successful guess is linking one's
+own LINE account to a stranger's ticket (a single-ticket notification hijack)
+— no PII is disclosed, since the RPC returns only a ticket number and
+department name.
+
 ## Files
 
 New:
