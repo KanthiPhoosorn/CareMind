@@ -269,7 +269,8 @@ export default function TicketPage() {
             </div>
           ) : (
             <a
-              href={`https://line.me/R/oaMessage/${process.env.NEXT_PUBLIC_LINE_OA_ID}/?LINK-${waitEstimate.lineLinkCode}`}
+              href={`https://line.me/R/oaMessage/${encodeURIComponent(process.env.NEXT_PUBLIC_LINE_OA_ID!)}/?LINK-${waitEstimate.lineLinkCode}`}
+              rel="noopener noreferrer"
               style={{
                 padding: '12px 24px',
                 background: '#06C755',
