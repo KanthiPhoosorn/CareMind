@@ -77,6 +77,14 @@ describe('POST /api/line/webhook', () => {
     expect(replyMessage).toHaveBeenCalledWith('reply-token-1', expect.stringContaining('42'));
   });
 
+  it('returns 200 and does not reply when the RPC returns an error', async () => {
+    callRpc.mockResolvedValue({ data: null, error: new Error('DB unavailable') });
+    const body = JSON.stringify({ events: [textEvent('LINK-A1B2C3D4')] });
+    const res = await POST(lineRequest(body));
+    expect(res.status).toBe(200);
+    expect(replyMessage).not.toHaveBeenCalled();
+  });
+
   it('ignores a non-text event and still returns 200', async () => {
     const body = JSON.stringify({
       events: [{ type: 'follow', replyToken: 'rt', source: { userId: 'U1' } }],

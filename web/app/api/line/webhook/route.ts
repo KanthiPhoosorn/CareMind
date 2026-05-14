@@ -23,7 +23,7 @@ interface LineEvent {
 function replyText(reason: string, ticketNumber: number | null, deptTh: string | null): string {
   switch (reason) {
     case 'linked':
-      return `✅ ผูกบัญชี LINE สำเร็จ — คิวหมายเลข ${ticketNumber} แผนก${deptTh}\nเราจะแจ้งเตือนคุณทาง LINE เมื่อใกล้ถึงคิว`;
+      return `✅ ผูกบัญชี LINE สำเร็จ — คิวหมายเลข ${ticketNumber} แผนก${deptTh ?? 'ไม่ทราบ'}\nเราจะแจ้งเตือนคุณทาง LINE เมื่อใกล้ถึงคิว`;
     case 'already_linked':
       return `บัญชีนี้ผูกกับคิวหมายเลข ${ticketNumber} อยู่แล้ว`;
     case 'closed':
@@ -64,6 +64,11 @@ export async function POST(req: Request): Promise<Response> {
   const rawBody = await req.text();
   const secret = process.env.LINE_CHANNEL_SECRET ?? '';
   const signature = req.headers.get('x-line-signature');
+
+  if (!secret) {
+    console.error('[line-webhook] LINE_CHANNEL_SECRET is not configured');
+    return new Response('bad signature', { status: 401 });
+  }
 
   if (!verifyLineSignature(rawBody, signature, secret)) {
     console.error('[line-webhook] signature verification failed');
