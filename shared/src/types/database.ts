@@ -227,6 +227,8 @@ export interface Database {
           otp_attempts: number;
           called_by: string | null;
           completed_by: string | null;
+          line_user_id: string | null;
+          line_link_code: string;
         };
         Insert: Omit<
           Database['public']['Tables']['queue_tickets']['Row'],
@@ -244,9 +246,13 @@ export interface Database {
           | 'otp_code_hash'
           | 'otp_expires_at'
           | 'otp_attempts'
+          | 'line_user_id'
+          | 'line_link_code'
         > & {
           priority?: number;
           state?: TicketState;
+          line_user_id?: string | null;
+          line_link_code?: string;
         };
         Update: Partial<Database['public']['Tables']['queue_tickets']['Insert']>;
         Relationships: never[];
@@ -347,6 +353,19 @@ export interface Database {
           current_department_code: string;
           current_department_name_th: string;
           current_department_name_en: string;
+          line_link_code: string;
+          line_user_id: string | null;
+        }>;
+      };
+      link_line_user_id: {
+        Args: { p_link_code: string; p_line_user_id: string };
+        Returns: Array<{
+          ok: boolean;
+          reason: string;
+          ticket_number: number | null;
+          department_name_th: string | null;
+          department_name_en: string | null;
+          state: string | null;
         }>;
       };
     };

@@ -51,6 +51,8 @@ export interface TicketWaitEstimate {
   currentDepartmentCode: string;
   currentDepartmentNameTh: string;
   currentDepartmentNameEn: string;
+  lineLinkCode: string;
+  lineUserId: string | null;
 }
 
 export async function getTicketWaitEstimate(
@@ -74,5 +76,7 @@ export async function getTicketWaitEstimate(
     currentDepartmentCode: r.current_department_code as string,
     currentDepartmentNameTh: r.current_department_name_th as string,
     currentDepartmentNameEn: r.current_department_name_en as string,
+    lineLinkCode: r.line_link_code as string,
+    lineUserId: (r.line_user_id as string | null) ?? null,
   };
 }
