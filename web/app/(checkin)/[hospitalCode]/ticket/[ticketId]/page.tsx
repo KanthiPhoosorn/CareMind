@@ -244,6 +244,50 @@ export default function TicketPage() {
             เราจะส่ง SMS แจ้งเตือนเมื่อใกล้ถึงคิวของคุณ
           </div>
         </div>
+
+        {waitEstimate &&
+          process.env.NEXT_PUBLIC_LINE_OA_ID &&
+          (waitEstimate.lineUserId ? (
+            <div
+              style={{
+                padding: '12px 16px',
+                background: 'var(--sev-info-bg)',
+                borderRadius: 'var(--r-lg)',
+                font: '600 13px/1.5 var(--font-ui)',
+                color: 'var(--brand-primary)',
+                textAlign: 'center',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              ✅ แจ้งเตือนทาง LINE แล้ว
+              <div
+                style={{ marginTop: 2, font: '400 12px/1.4 var(--font-ui)', color: 'var(--fg3)' }}
+              >
+                LINE notifications on
+              </div>
+            </div>
+          ) : (
+            <a
+              href={`https://line.me/R/oaMessage/${process.env.NEXT_PUBLIC_LINE_OA_ID}/?LINK-${waitEstimate.lineLinkCode}`}
+              style={{
+                padding: '12px 24px',
+                background: '#06C755',
+                color: '#fff',
+                borderRadius: 'var(--r-lg)',
+                font: '600 14px/1.3 var(--font-ui)',
+                textDecoration: 'none',
+                textAlign: 'center',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              รับแจ้งเตือนทาง LINE
+              <div style={{ font: '400 12px/1.4 var(--font-ui)', opacity: 0.9 }}>
+                Get notified on LINE
+              </div>
+            </a>
+          ))}
       </div>
 
       <button
