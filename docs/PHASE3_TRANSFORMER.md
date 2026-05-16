@@ -1,6 +1,8 @@
 # Phase 3: Small Causal Transformer
 
 > A lightweight, self-contained transformer for experimentation with clinical text generation on small datasets.
+>
+> **Note**: Phase 3 is a *teaching/experimentation* model. For production text generation, see the **Production ML Stack** section below.
 
 ## Overview
 
@@ -11,6 +13,27 @@ Phase 3 implements a real trainable transformer using PyTorch that learns patter
 - **Teaching**: Reference implementation for building NLP systems with small datasets
 
 **Status**: ✅ Production-ready for development and learning
+
+---
+
+## Production ML Stack vs Phase 3
+
+CareMind now has **two parallel ML approaches**:
+
+| Aspect | Phase 3 (Teaching) | Production Stack |
+|--------|---|---|
+| **Model type** | Decoder-only causal (GPT-like) | Encoder + NER (BERT-like) |
+| **Training objective** | Causal language modeling | Masked language modeling (MLM) |
+| **Scale** | 50K-300K params, ~2K tokens | 30-110M params, 1-5B tokens |
+| **Training data** | Sample JSON (39 snippets) | Full hospital ETL pipeline |
+| **Tokenizer** | Word-level, 240-300 vocab | SentencePiece BPE, 32k vocab |
+| **Use case** | Demo + learning | Production retrieval, NER, generation |
+| **Training time** | Seconds (CPU) | 1-2 weeks (GPU) |
+| **Purpose** | Understand transformers | Real clinical AI system |
+
+**Use Phase 3 for**: Learning architecture, quick experiments, understanding causal LM
+
+**Use Production Stack for**: Real patient data retrieval, NER entity extraction, drug safety, clinical decision support
 
 ---
 
@@ -326,6 +349,23 @@ A: Increase `--temperature` (try 0.9–1.2), or decrease `--min-confidence` (try
 
 **Q: "CUDA out of memory"**  
 A: Reduce `--batch-size` to 4 or 2. CPU is fine for small models.
+
+---
+
+## Next: Production ML Stack
+
+Phase 3 is **educational**. For real clinical AI, see the full production training infrastructure:
+
+- **[Training & Evaluation Guide](./TRAINING_AND_EVALUATION.md)** — Train 50-110M encoders, fine-tune for NER, build eval sets (1-2 weeks training)
+- **[ML Architecture & Integration](./ARCHITECTURE_ML_INTEGRATION.md)** — Complete system design, data pipeline, retrieval, safety
+- **[Data Pipeline & Tokenization](./DATA_PIPELINE_AND_TOKENIZER.md)** — De-identification, ETL, SentencePiece tokenizer, NER labeling
+
+**Quick comparison:**
+
+```
+Phase 3:      40K params → 2K tokens → 5s training (demo)
+Production:   110M params → 1B+ tokens → 2 weeks training (real AI)
+```
 
 ---
 

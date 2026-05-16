@@ -378,6 +378,15 @@ CareMind/
 └── tsconfig.json         # Base TS config
 ```
 
+**Important docs**:
+- **[`docs/CLINICAL_PERSONAS_AND_TRIAGE.md`](./docs/CLINICAL_PERSONAS_AND_TRIAGE.md)** — Clinical personas (doctor, nurse, pharmacist), 5 gold-standard summary examples per role, v1 triage scope (12 supported chief complaints), escalation logic, and allergy/drug interaction reference
+- **[`docs/DATA_PIPELINE_AND_TOKENIZER.md`](./docs/DATA_PIPELINE_AND_TOKENIZER.md)** — Data pipeline (de-identification, ETL, chunking), tokenizer training (SentencePiece BPE 32k), and NER labeling (100+ clinician-labeled examples)
+- **[`docs/TRAINING_AND_EVALUATION.md`](./docs/TRAINING_AND_EVALUATION.md)** — Model training (50-100M encoder, 1-5B tokens, MLM), NER fine-tuning (500-1000 labels), drug interaction rules, and evaluation sets (100 cases + 100 triage)
+- **[`docs/ARCHITECTURE_ML_INTEGRATION.md`](./docs/ARCHITECTURE_ML_INTEGRATION.md)** — Complete ML system architecture, data flow examples, component details, integration points, and deployment checklist
+- **[`docs/PHASE3_TRANSFORMER.md`](./docs/PHASE3_TRANSFORMER.md)** — Small causal transformer for clinical text (teaching/demo)
+- **[`docs/PHASE4_SAFETY_LAYER.md`](./docs/PHASE4_SAFETY_LAYER.md)** — Clinical safety: PII redaction, drug interactions, dosage validation, hallucination detection
+- **[`docs/PHASE5_THAI_MEDICAL.md`](./docs/PHASE5_THAI_MEDICAL.md)** — Thai-English code-switching, medical abbreviations, symptom normalization
+
 ---
 
 ## Development Workflow
@@ -388,7 +397,7 @@ CareMind/
 4. **Get 1 approving review** (from CODEOWNERS).
 5. **Merge** — squash or rebase only (linear history enforced).
 
-See [`QUALITY.md`](./QUALITY.md) for the full Definition of Done.
+See [`QUALITY.md`](./QUALITY.md) for the full Definition of Done and [`docs/CLINICAL_PERSONAS_AND_TRIAGE.md`](./docs/CLINICAL_PERSONAS_AND_TRIAGE.md) for clinical persona requirements.
 
 ---
 

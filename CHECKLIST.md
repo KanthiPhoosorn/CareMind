@@ -105,6 +105,18 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 
 ## Sprint 2 — Delta Summary + AI (May 17–23)
 
+### Clinical Personas & Triage Scope (v1 foundation)
+
+- [x] **Define 3 concrete personas** (doctor, nurse, pharmacist) with role-specific summary requirements
+- [x] **Create 5 gold-standard examples per persona** (reviewed by clinical informaticist + 2 clinicians)
+  - Doctor: 5 examples (fever+cough, RUQ pain, meningitis, syncope, rash)
+  - Nurse: 5 examples (post-op, COPD exacerbation, stable chronic, palliative, behavioral)
+  - Pharmacist: 5 examples (polypharmacy, warfarin+NSAID, renal dosing, allergy mgmt, TDM)
+- [x] **Define v1 triage scope: 12 chief complaints** (fever, cough, dyspnea, chest pain, abd pain, headache, rash, N/V, diarrhea, UTI sx, extremity pain/swelling, med side effects)
+- [x] **Document out-of-scope handling** (psychiatric, OB/GYN, trauma, oncology, rare disorders, chronic disease)
+- [x] **Escalation triggers** (critical vitals, red-flag symptoms, emergency conditions)
+- [x] Reference: `docs/CLINICAL_PERSONAS_AND_TRIAGE.md`
+
 ### Delta engine (`shared/lib/delta/`)
 
 - [ ] Diff between two timepoints across all 5 data types
@@ -115,13 +127,79 @@ Legend: `[x]` done · `[ ]` to do · `[~]` partial · ❓ decision needed
 - [ ] Imaging serial comparison
 - [ ] Returns `DeltaSummary` per `sample_data/DATA_STRUCTURE_GUIDE.md` spec
 
+### Data Pipeline & Tokenization (foundation for AI)
+
+- [x] **De-identification pipeline** — removes PII (names, HN, dates, phone, email) with regex + dictionary + NER
+  - Reference: `scripts/deidentify.py`
+  - Supports Thai names, HN patterns, English names, date formats
+  - JSON + text support
+
+- [x] **ETL pipeline** — HIS Excel → normalized JSON chunks with metadata
+  - Reference: `scripts/etl_pipeline.py`
+  - Chunks by encounter, note section, document type
+  - Adds timestamp, author role, vital signs metadata
+  - Output: JSONL + index JSON
+
+- [x] **SentencePiece tokenizer** — BPE 32k vocab, Thai+English+medical
+  - Reference: `scripts/train_tokenizer.py`
+  - Handles code-switching, abbreviations, medical terms
+  - Evaluated on real clinical notes
+
+- [x] **NER training data** — 100+ clinician-labeled examples
+  - Reference: `scripts/generate_ner_data.py`
+  - Entity types: DRUG, DISEASE, SYMPTOM, LAB, DOSAGE, VITAL, ANATOMY, PROCEDURE
+  - Output: JSON, CoNLL, IOB2, spaCy formats
+
+- [x] **Documentation**: `docs/DATA_PIPELINE_AND_TOKENIZER.md`
+
+- [ ] Expand NER data: collect 500+ clinician-labeled examples
+- [ ] Train spaCy custom NER model on labeled data
+- [ ] Embedding: use tokenizer + transformer for dense vectors
+- [ ] Milvus ingestion: load chunks into vector DB with embeddings
+
+### AI layer: Model Training & Evaluation (week 1-4)
+
+**Encoder Training (1-2 weeks)**
+- [x] Train small encoder infrastructure: `scripts/train_medical_encoder.py` + utilities
+- [x] Build corpus builder: Thai+English+medical text normalization
+- [x] MLM training loop with checkpointing
+- [x] Model size presets (tiny/small/medium/base)
+- [x] Hardware optimization (gradient accumulation, mixed precision)
+- [ ] Run training on full 1-5B token corpus (async)
+- [ ] Select best checkpoint for fine-tuning
+
+**NER Fine-tuning (3-5 days)**
+- [x] NER training script: `scripts/finetune_ner.py` (8 entity types)
+- [x] Token-level tagging with subword alignment
+- [x] Evaluation metrics (F1, precision, recall)
+- [x] Auto-labeling for semi-supervised expansion
+- [ ] Fine-tune on initial 100 labels
+- [ ] Expand to 500-1000 labeled examples (manual review)
+- [ ] Fine-tune v2 on expanded set
+
+**Drug Interaction Engine (1 day)**
+- [x] Rule-based engine: `scripts/drug_interaction_engine.py`
+- [x] Default database (~20 drugs, ~10 interactions, allergy groups, renal dosing)
+- [x] Prescription validation + red-flag detection
+- [x] Thai FDA + DrugBank integration framework
+- [ ] Expand drug database (target: 500+ drugs, 1000+ interactions)
+- [ ] Integrate into chatbot prescription review
+
+**Evaluation Sets (2-3 days)**
+- [x] Generator: `scripts/generate_eval_sets.py`
+- [x] 100 clinical cases with persona-specific summaries (doctor/nurse/pharmacist)
+- [x] 100 triage scenarios with red-flag labels
+- [x] Gold-standard benchmark data
+- [ ] Add custom cases from real clinical notes
+- [ ] Extend to 200+ cases for robust evaluation
+
 ### AI layer (local model + citation RAG)
 
 - [ ] Stand up the local inference gateway and wire it through `shared/services/ai.ts`
-- [ ] Build citation-based retrieval over `data/` and `sample_data/` with hospital, role, and patient scoping
+- [ ] Build citation-based retrieval over processed chunks with hospital, role, and patient scoping
 - [ ] Split prompts and policies for patient chatbot (symptom screening) and staff chatbot (summaries)
 - [ ] Streaming responses
-- [ ] ❓ PHI redaction policy before sending prompt context into the model (recommend: strip name/AN, keep clinical fields)
+- [ ] ✅ PHI redaction: use `scripts/deidentify.py` before sending prompt context (strip name/AN, keep clinical fields)
 - [ ] Cache by `(patientId, fromTs, toTs)`
 
 ### Phase 3: Small Causal Transformer (optional, learning tool)

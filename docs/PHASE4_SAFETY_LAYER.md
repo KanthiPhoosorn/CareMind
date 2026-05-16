@@ -1,5 +1,9 @@
 # Phase 4: Clinical Safety Layer
 
+> Production-grade safety layer protecting AI outputs from harmful advice, PII leaks, hallucinations, and dangerous drug combinations.
+>
+> **New**: Phase 4 now integrates with the **Drug Interaction Engine** (`scripts/drug_interaction_engine.py`) for real-world drug safety rules, see [below](#integration-with-drug-engine).
+
 ## Overview
 
 Phase 4 introduces a **production-grade Clinical Safety Layer** that protects medical text generation systems from harmful outputs, data breaches, and hallucinations.
@@ -15,7 +19,7 @@ The safety layer operates at two critical points:
 | **PII Detection & Redaction** | Detects and removes personal identifiable information | Rule-based |
 | **Content Filtering** | Blocks dangerous medical advice patterns | Rule-based |
 | **Hallucination Detection** | Identifies unrealistic/impossible medical claims | Rule-based + ML-ready |
-| **Drug Interaction Checking** | Validates medication combinations | Knowledge-based |
+| **Drug Interaction Checking** | Validates medication combinations | Knowledge-based + ML-backed |
 | **Contraindication Checking** | Ensures medications match conditions safely | Knowledge-based |
 | **Dosage Validation** | Verifies safe medication dosages | Knowledge-based |
 | **Audit Logging** | Maintains compliance-ready decision logs | Logging |
@@ -593,6 +597,145 @@ The knowledge base contains ~20 medications and major interactions. Real clinica
 - Complement with professional drug databases (RxNorm, DrugBank)
 - Regular updates as medical knowledge evolves
 - Human-in-the-loop for complex cases
+
+## Integration with Drug Engine
+
+**New**: CareMind now has a dedicated **Drug Interaction Engine** (`scripts/drug_interaction_engine.py`) that integrates seamlessly with the safety layer.
+
+### Drug Interaction Engine Features
+
+The engine provides:
+- **~20 medications** with full interaction profiles
+- **~10 major drug-drug interactions** with severity levels (CONTRAINDICATED, SEVERE, MODERATE, etc.)
+- **Drug-disease contraindications** (e.g., beta blockers in asthma)
+- **Allergy cross-reactivity groups** (e.g., penicillin ↔ cephalosporins)
+- **Renal dosing** based on GFR thresholds (<15, 15-29, 30-59, ≥60)
+
+### Quick Start
+
+```python
+from drug_interaction_engine import DrugDatabase, PrescriptionValidator
+
+# Load database (comes pre-built with ~20 drugs)
+db = DrugDatabase.load_from_file("drugs/drug_database.json")
+
+# Check two drugs
+interaction = db.check_interaction("warfarin", "aspirin")
+print(f"Severity: {interaction.severity}")  # → SEVERE
+print(f"Reason: {interaction.reason}")      # → Both inhibit hemostasis
+
+# Validate prescription
+validator = PrescriptionValidator(db)
+result = validator.validate(prescription, patient_data)
+
+if result['alerts']:
+    print(f"⚠️ ALERTS: {result['alerts']}")
+if result['warnings']:
+    print(f"⚠️ WARNINGS: {result['warnings']}")
+```
+
+### Integration with Safety Layer
+
+```python
+from clinical_safety_layer import ClinicalSafetyLayer
+from drug_interaction_engine import DrugDatabase
+
+# Initialize both
+safety = ClinicalSafetyLayer()
+drug_db = DrugDatabase.load_from_file("drugs/drug_database.json")
+
+def safe_drug_recommendation(patient_meds, new_drug, patient_gfr):
+    """
+    Safety-checked drug recommendation.
+    """
+    # 1. Safety layer: check for harmful advice patterns
+    advice = f"Consider adding {new_drug} to current regimen"
+    output_result = safety.validate_output(advice)
+    
+    if output_result['level'] == 'BLOCKED':
+        return {"safe": False, "reason": "Unsafe advice pattern"}
+    
+    # 2. Drug engine: check interactions
+    interactions = drug_db.check_all_interactions(patient_meds + [new_drug])
+    
+    if interactions and any(i.severity == 'CONTRAINDICATED' for i in interactions):
+        return {"safe": False, "reason": f"Contraindicated combination: {interactions}"}
+    
+    # 3. Renal dosing validation
+    dosing = drug_db.get_renal_dosing(new_drug, patient_gfr)
+    if dosing:
+        advice += f"\nRenal dosing (GFR {patient_gfr}): {dosing}"
+    
+    return {"safe": True, "recommendation": advice}
+
+# Usage
+result = safe_drug_recommendation(
+    patient_meds=["metoprolol", "lisinopril"],
+    new_drug="atorvastatin",
+    patient_gfr=45
+)
+print(result)
+# → {
+#     "safe": True,
+#     "recommendation": "Consider adding atorvastatin to current regimen\nRenal dosing (GFR 45): 10-80mg daily"
+#   }
+```
+
+### Expanding the Drug Database
+
+Add your own drugs and interactions:
+
+```python
+from drug_interaction_engine import DrugDatabase, SeverityLevel
+
+db = DrugDatabase()
+
+# Add drug
+db.add_drug("Lisinopril", "ACE_inhibitor", properties={"class": "antihypertensive"})
+
+# Add interaction
+db.add_interaction(
+    "Lisinopril", "Potassium",
+    SeverityLevel.SEVERE,
+    reason="ACE-I increases potassium; hyperkalemia risk",
+    recommendation="Monitor K+ level, avoid K+ supplements",
+    management="Check baseline K+ and renal function before starting"
+)
+
+# Add contraindication
+db.add_contraindication("Lisinopril", "Pregnancy", "Teratogenic in 2nd/3rd trimester")
+
+# Add allergy group
+db.add_allergy_group("beta-lactams", ["penicillin", "amoxicillin", "cephalosporin"])
+
+# Add renal dosing
+db.add_renal_dosing("Ciprofloxacin", {
+    "gfr>=60": "500mg q12h",
+    "gfr_30_59": "500mg q24h",
+    "gfr_15_29": "250mg q24h",
+    "gfr<15": "250mg q48h or avoid"
+})
+
+# Save
+db.save_to_file("drugs/drug_database_custom.json")
+```
+
+### Reference Data Sources
+
+Populate your database from:
+- **Thai FDA Drug Database**: https://www.fda.moph.go.th/
+- **DrugBank**: https://go.drugbank.com/
+- **RxNorm**: https://www.nlm.nih.gov/research/umls/rxnorm/
+- **UpToDate**: https://www.uptodate.com/ (subscription)
+- **Micromedex**: https://www.ibm.com/products/micromedex (subscription)
+
+For Thai-specific data:
+- **Thai National List of Essential Medicines**: Check MOPH website
+- **Thai Drug Monograph Database**: https://www.fda.moph.go.th/
+
+---
+
+## Limitations & Future Work
 
 ### 3. Context Extraction is Heuristic
 
