@@ -212,7 +212,7 @@ export interface Database {
           ticket_number: number;
           phone_e164: string;
           symptom_code: SymptomCode;
-          severity: TriageSeverity;
+          severity: TriageSeverity | null;
           priority: number;
           state: TicketState;
           created_at: string;
@@ -227,6 +227,8 @@ export interface Database {
           otp_attempts: number;
           called_by: string | null;
           completed_by: string | null;
+          line_user_id: string | null;
+          line_link_code: string;
         };
         Insert: Omit<
           Database['public']['Tables']['queue_tickets']['Row'],
@@ -244,9 +246,13 @@ export interface Database {
           | 'otp_code_hash'
           | 'otp_expires_at'
           | 'otp_attempts'
+          | 'line_user_id'
+          | 'line_link_code'
         > & {
           priority?: number;
           state?: TicketState;
+          line_user_id?: string | null;
+          line_link_code?: string;
         };
         Update: Partial<Database['public']['Tables']['queue_tickets']['Insert']>;
         Relationships: never[];
@@ -274,7 +280,6 @@ export interface Database {
         Args: {
           p_hospital_code: string;
           p_symptom_code: string;
-          p_severity: string;
           p_phone_e164: string;
           p_locale?: string;
         };
@@ -287,6 +292,17 @@ export interface Database {
           position_in_queue: number;
           patient_token: string;
           otp_code: string;
+        }>;
+      };
+      triage_walkin_ticket: {
+        Args: { p_ticket_id: string; p_severity: string };
+        Returns: Array<{
+          ticket_id: string;
+          ticket_number: number;
+          department_code: string;
+          department_name_th: string;
+          department_name_en: string;
+          severity: string;
         }>;
       };
       verify_walkin_ticket: {
@@ -318,6 +334,39 @@ export interface Database {
       current_hospital_id: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      estimate_wait_minutes: {
+        Args: { p_department_id: string; p_position: number };
+        Returns: number;
+      };
+      sweep_stale_called_tickets: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      get_ticket_wait_estimate: {
+        Args: { p_ticket_id: string; p_patient_token: string };
+        Returns: Array<{
+          state: string;
+          position_in_queue: number;
+          estimated_wait_minutes: number;
+          current_ticket_number: number;
+          current_department_code: string;
+          current_department_name_th: string;
+          current_department_name_en: string;
+          line_link_code: string;
+          line_user_id: string | null;
+        }>;
+      };
+      link_line_user_id: {
+        Args: { p_link_code: string; p_line_user_id: string };
+        Returns: Array<{
+          ok: boolean;
+          reason: string;
+          ticket_number: number | null;
+          department_name_th: string | null;
+          department_name_en: string | null;
+          state: string | null;
+        }>;
       };
     };
   };

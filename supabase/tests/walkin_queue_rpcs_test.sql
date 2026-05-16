@@ -1,7 +1,17 @@
+-- Walk-in queue RPC tests (M0 + M3a + Phase E nurse triage).
+--
+-- Flow under test:
+--   1. create_walkin_ticket → ticket lands in TRIAGE dept, pending_triage state.
+--   2. verify_walkin_ticket → OTP, independent of state.
+--   3. cancel_walkin_ticket → patient bails before triage.
+--   4. triage_walkin_ticket → nurse assigns severity, re-routes to OPD dept.
+--   5. call_next_ticket / mark_ticket_done / mark_ticket_no_show → OPD flow.
+--
+-- Every assertion is a top-level SELECT so pgTAP's TAP output reaches stdout.
 BEGIN;
-SELECT plan(18);
+SELECT plan(28);
 
--- ── Fixture: one hospital, two depts, routing rule for cough → INTMED ──
+-- ── Fixture ──
 INSERT INTO hospitals (id, name, code) VALUES
   ('11111111-1111-1111-1111-111111111111', 'Hospital A', 'HA');
 
@@ -9,19 +19,20 @@ INSERT INTO departments (id, hospital_id, code, name_th, name_en) VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
    '11111111-1111-1111-1111-111111111111', 'INTMED', 'อายุรกรรม', 'Internal Medicine'),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-   '11111111-1111-1111-1111-111111111111', 'ER',     'ฉุกเฉิน',  'Emergency');
+   '11111111-1111-1111-1111-111111111111', 'ER',     'ฉุกเฉิน',  'Emergency'),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc',
+   '11111111-1111-1111-1111-111111111111', 'TRIAGE', 'จุดคัดกรอง', 'Triage');
 
 INSERT INTO routing_rules (hospital_id, symptom_code, severity, target_department_id, priority) VALUES
   ('11111111-1111-1111-1111-111111111111', 'cough',  NULL,     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 100),
   ('11111111-1111-1111-1111-111111111111', 'injury', 'severe', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 10);
 
--- Staff profile in hospital A (for staff RPC tests)
 INSERT INTO auth.users (
   id, instance_id, aud, role, email, encrypted_password,
   email_confirmed_at, created_at, updated_at,
   raw_app_meta_data, raw_user_meta_data
 ) VALUES (
-  '99999999-9999-9999-9999-999999999991',
+  '91919191-9191-9191-9191-919191919191',
   '00000000-0000-0000-0000-000000000000',
   'authenticated', 'authenticated',
   'staff-a@example.test', '',
@@ -29,251 +40,278 @@ INSERT INTO auth.users (
 );
 
 INSERT INTO profiles (id, hospital_id, email, full_name, role)
-  VALUES ('99999999-9999-9999-9999-999999999991',
+  VALUES ('91919191-9191-9191-9191-919191919191',
           '11111111-1111-1111-1111-111111111111',
           'staff-a@example.test', 'Staff A', 'doctor');
 
 -- ── Tests 1-5: create_walkin_ticket ──
 
--- Test 1: anonymous create returns a ticket with INTMED routing
-SET LOCAL ROLE anon;
-DO $$
-DECLARE r record;
-BEGIN
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'cough', 'mild', '+66890000001', 'th');
-  PERFORM ok(r.ticket_id IS NOT NULL,         'Test 1a: create returns a ticket_id');
-  PERFORM ok(r.ticket_number = 1,             'Test 1b: first ticket of the day is #1');
-  PERFORM ok(r.department_code = 'INTMED',    'Test 1c: cough/mild routes to INTMED');
-  PERFORM ok(length(r.patient_token) >= 24,   'Test 1d: patient_token is returned and non-trivial');
-  PERFORM ok(r.otp_code ~ '^\d{6}$',          'Test 1e: otp_code is a 6-digit string');
-END $$;
+CREATE TEMP TABLE t1 ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'cough', '+66890000001', 'th');
 
--- Test 2: severity bumps routing to ER
-DO $$
-DECLARE r record;
-BEGIN
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'injury', 'severe', '+66890000002', 'th');
-  PERFORM ok(r.department_code = 'ER',
-    'Test 2: injury+severe routes to ER (priority 10 wins over fallback)');
-END $$;
+SELECT ok((SELECT ticket_id IS NOT NULL FROM t1),
+  'Test 1a: create returns a ticket_id');
+SELECT ok((SELECT ticket_number = 1 FROM t1),
+  'Test 1b: first ticket of the day in TRIAGE is #1');
+SELECT ok((SELECT department_code = 'TRIAGE' FROM t1),
+  'Test 1c: every new walk-in lands in TRIAGE (severity assigned later by nurse)');
+SELECT ok((SELECT length(patient_token) >= 24 FROM t1),
+  'Test 1d: patient_token returned and non-trivial');
+SELECT ok((SELECT otp_code ~ '^\d{6}$' FROM t1),
+  'Test 1e: otp_code is a 6-digit string');
 
--- Test 3: unknown hospital code raises
+SELECT ok(
+  (SELECT state = 'pending_triage' AND severity IS NULL
+     FROM queue_tickets q, t1 WHERE q.id = t1.ticket_id),
+  'Test 2: new ticket is pending_triage with NULL severity'
+);
+
 SELECT throws_ok(
-  $$ SELECT * FROM create_walkin_ticket('ZZZ', 'cough', 'mild', '+66890000003', 'th') $$,
-  '22023',
-  NULL,
+  $$ SELECT * FROM create_walkin_ticket('ZZZ', 'cough', '+66890000003', 'th') $$,
+  '22023', NULL,
   'Test 3: unknown hospital code raises 22023'
 );
 
--- Test 4: no routing rule for symptom raises
 SELECT throws_ok(
-  $$ SELECT * FROM create_walkin_ticket('HA', 'unmapped_symptom', 'mild', '+66890000004', 'th') $$,
-  '22023',
-  NULL,
-  'Test 4: missing routing rule raises 22023'
+  $$ SELECT * FROM create_walkin_ticket('HA', 'unmapped_symptom', '+66890000004', 'th') $$,
+  '22023', NULL,
+  'Test 4: invalid symptom code raises 22023'
 );
 
--- Test 5: per-day ticket number is monotonic
-DO $$
-DECLARE r record;
-BEGIN
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'cough', 'mild', '+66890000005', 'th');
-  PERFORM ok(r.ticket_number = 2,
-    'Test 5: second ticket of the day is #2');
-END $$;
+CREATE TEMP TABLE t5 ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'cough', '+66890000005', 'th');
+
+SELECT ok((SELECT ticket_number = 2 FROM t5),
+  'Test 5: second ticket of the day in TRIAGE is #2');
+
+-- ── Tests 6-9: verify_walkin_ticket (works regardless of state) ──
+
+CREATE TEMP TABLE t_verify ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'cough', '+66890000010', 'th');
+-- t_verify is later read under SET LOCAL ROLE authenticated for the triage
+-- test, so we grant access up front.
+GRANT SELECT ON t_verify TO authenticated;
+
+CREATE TEMP TABLE t_verify_ok ON COMMIT DROP AS
+  SELECT v.ok
+    FROM t_verify, LATERAL verify_walkin_ticket(t_verify.ticket_id, t_verify.otp_code) v;
+
+SELECT ok((SELECT ok FROM t_verify_ok), 'Test 6: correct OTP returns ok=true');
+SELECT ok(
+  (SELECT verified_at IS NOT NULL FROM queue_tickets q, t_verify
+    WHERE q.id = t_verify.ticket_id),
+  'Test 7: verified_at is set after successful verify'
+);
+
+CREATE TEMP TABLE t9 ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'cough', '+66890000011', 'th');
+
+CREATE TEMP TABLE t9_bad ON COMMIT DROP AS
+  SELECT v.ok AS bad_ok
+    FROM t9, LATERAL verify_walkin_ticket(t9.ticket_id, '000000') v;
+
+SELECT ok((SELECT NOT bad_ok FROM t9_bad), 'Test 8: wrong OTP returns ok=false');
+SELECT ok(
+  (SELECT otp_attempts = 1 FROM queue_tickets q, t9 WHERE q.id = t9.ticket_id),
+  'Test 9: otp_attempts incremented on failed verify'
+);
+
+-- ── Tests 10-11: cancel_walkin_ticket on pending_triage ──
+
+CREATE TEMP TABLE t_cancel ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'cough', '+66890000020', 'th');
+
+CREATE TEMP TABLE t_cancel_ok ON COMMIT DROP AS
+  SELECT c.ok
+    FROM t_cancel, LATERAL cancel_walkin_ticket(t_cancel.ticket_id, t_cancel.patient_token) c;
+
+SELECT ok((SELECT ok FROM t_cancel_ok),
+  'Test 10: cancel with correct token succeeds (even pre-triage)');
+SELECT ok(
+  (SELECT state = 'cancelled' FROM queue_tickets q, t_cancel WHERE q.id = t_cancel.ticket_id),
+  'Test 11: state is cancelled after successful cancel'
+);
+
+-- ── Tests 12-15: triage_walkin_ticket ──
+
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
+CREATE TEMP TABLE t_triage_result ON COMMIT DROP AS
+  SELECT r.*
+    FROM t_verify, LATERAL triage_walkin_ticket(t_verify.ticket_id, 'mild') r;
 
 RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
--- ── Tests 6-9: verify_walkin_ticket ──
+SELECT ok((SELECT department_code = 'INTMED' FROM t_triage_result),
+  'Test 12: triage cough+mild routes to INTMED (NULL-severity rule)');
+SELECT ok((SELECT severity = 'mild' FROM t_triage_result),
+  'Test 13: triage_walkin_ticket records the assigned severity');
+SELECT ok(
+  (SELECT state = 'waiting' AND severity = 'mild' AND priority = 100
+     FROM queue_tickets q, t_verify WHERE q.id = t_verify.ticket_id),
+  'Test 14: triage transitions pending_triage → waiting with priority from severity'
+);
 
--- Set up: create a ticket and capture its OTP and id
-DO $$
-DECLARE r record; v_otp text; v_id uuid;
-BEGIN
-  SET LOCAL ROLE anon;
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'cough', 'mild', '+66890000010', 'th');
-  v_otp := r.otp_code;
-  v_id  := r.ticket_id;
-  RESET ROLE;
+-- severe injury should re-route to ER (priority-10 rule wins over fallback)
+CREATE TEMP TABLE t_severe_create ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'injury', '+66890000040', 'th');
+GRANT SELECT ON t_severe_create TO authenticated;
 
-  -- Test 6: anon verify with correct OTP succeeds and sets verified_at
-  SET LOCAL ROLE anon;
-  PERFORM ok(
-    (SELECT ok FROM verify_walkin_ticket(v_id, v_otp)),
-    'Test 6: correct OTP returns ok=true'
-  );
-  RESET ROLE;
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
 
-  PERFORM ok(
-    (SELECT verified_at IS NOT NULL FROM queue_tickets WHERE id = v_id),
-    'Test 7: verified_at is set after successful verify'
-  );
+CREATE TEMP TABLE t_severe_triage ON COMMIT DROP AS
+  SELECT r.*
+    FROM t_severe_create, LATERAL triage_walkin_ticket(t_severe_create.ticket_id, 'severe') r;
 
-  -- Test 8: re-verify same OTP after success is a no-op success
-  SET LOCAL ROLE anon;
-  PERFORM ok(
-    (SELECT ok FROM verify_walkin_ticket(v_id, v_otp)),
-    'Test 8: re-verifying an already-verified ticket is idempotent ok'
-  );
-  RESET ROLE;
-END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
--- Test 9: wrong OTP returns ok=false and increments attempts
-DO $$
-DECLARE r record; v_id uuid; v_attempts smallint;
-BEGIN
-  SET LOCAL ROLE anon;
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'cough', 'mild', '+66890000011', 'th');
-  v_id := r.ticket_id;
-  PERFORM ok(
-    NOT (SELECT ok FROM verify_walkin_ticket(v_id, '000000')),
-    'Test 9a: wrong OTP returns ok=false'
-  );
-  RESET ROLE;
+SELECT ok((SELECT department_code = 'ER' FROM t_severe_triage),
+  'Test 15: triage injury+severe re-routes to ER (priority-10 rule wins)');
 
-  SELECT otp_attempts INTO v_attempts FROM queue_tickets WHERE id = v_id;
-  PERFORM ok(v_attempts = 1, 'Test 9b: otp_attempts incremented on failed verify');
-END $$;
+-- ── Tests 16-17: triage error paths ──
 
--- ── Tests 10-11: cancel_walkin_ticket ──
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
 
-DO $$
-DECLARE r record; v_id uuid; v_token text;
-BEGIN
-  SET LOCAL ROLE anon;
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'cough', 'mild', '+66890000020', 'th');
-  v_id := r.ticket_id;
-  v_token := r.patient_token;
+CREATE TEMP TABLE t_double ON COMMIT DROP AS
+  SELECT t_verify.ticket_id FROM t_verify;
+GRANT SELECT ON t_double TO authenticated;
 
-  -- Test 10: correct token cancels the ticket
-  PERFORM ok(
-    (SELECT ok FROM cancel_walkin_ticket(v_id, v_token)),
-    'Test 10: cancel with correct token succeeds'
-  );
-  RESET ROLE;
+SELECT throws_ok(
+  $$ SELECT * FROM triage_walkin_ticket((SELECT ticket_id FROM t_double), 'severe') $$,
+  '22023', NULL,
+  'Test 16: triaging an already-waiting ticket raises 22023'
+);
 
-  PERFORM ok(
-    (SELECT state = 'cancelled' FROM queue_tickets WHERE id = v_id),
-    'Test 11: state is cancelled after successful cancel'
-  );
-END $$;
+SELECT throws_ok(
+  $$ SELECT * FROM triage_walkin_ticket((SELECT ticket_id FROM t_double), 'bogus') $$,
+  '22023', NULL,
+  'Test 17: invalid severity raises 22023'
+);
 
--- ── Tests 12-15: call_next_ticket (staff) ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
--- Switch to staff role and call next from INTMED dept
-DO $$
-DECLARE r record;
-BEGIN
-  PERFORM set_config(
-    'request.jwt.claims',
-    '{"sub":"99999999-9999-9999-9999-999999999991","role":"authenticated"}',
-    true
-  );
-  SET LOCAL ROLE authenticated;
+-- ── Tests 18-20: call_next_ticket (staff role required) ──
 
-  -- Test 12: call_next on a queue with at least one waiting+verified ticket returns it
-  -- (verified ticket from Test 6 setup lives in INTMED; first to be called)
-  SELECT * INTO r FROM call_next_ticket('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
-  PERFORM ok(r.ticket_id IS NOT NULL,
-    'Test 12: call_next returns the oldest waiting+verified ticket');
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
 
-  -- Test 13: state transitioned to called
-  PERFORM ok(
-    (SELECT state = 'called' FROM queue_tickets WHERE id = r.ticket_id),
-    'Test 13: state is called after call_next'
-  );
+CREATE TEMP TABLE t_call ON COMMIT DROP AS
+  SELECT * FROM call_next_ticket('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 
-  -- Test 14: called_at and called_by populated
-  PERFORM ok(
-    (SELECT called_at IS NOT NULL
-            AND called_by = '99999999-9999-9999-9999-999999999991'
-       FROM queue_tickets WHERE id = r.ticket_id),
-    'Test 14: called_at and called_by populated by staff RPC'
-  );
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
-  RESET ROLE;
-  PERFORM set_config('request.jwt.claims', '', true);
-END $$;
+SELECT ok((SELECT ticket_id IS NOT NULL FROM t_call),
+  'Test 18: call_next on INTMED returns the post-triage ticket');
+SELECT ok(
+  (SELECT state = 'called' FROM queue_tickets q, t_call WHERE q.id = t_call.ticket_id),
+  'Test 19: state is called after call_next'
+);
 
--- Test 15: call_next on an empty dept returns NULL
-DO $$
-DECLARE r record;
-BEGIN
-  PERFORM set_config(
-    'request.jwt.claims',
-    '{"sub":"99999999-9999-9999-9999-999999999991","role":"authenticated"}',
-    true
-  );
-  SET LOCAL ROLE authenticated;
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
 
-  SELECT * INTO r FROM call_next_ticket('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
-  PERFORM ok(r.ticket_id IS NULL,
-    'Test 15: call_next on empty dept returns NULL ticket_id');
+CREATE TEMP TABLE t_empty ON COMMIT DROP AS
+  SELECT * FROM call_next_ticket('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 
-  RESET ROLE;
-  PERFORM set_config('request.jwt.claims', '', true);
-END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
--- ── Tests 16-18: mark_ticket_done and mark_ticket_no_show ──
+SELECT ok((SELECT ticket_id IS NULL FROM t_empty),
+  'Test 20: call_next on dept with no waiting tickets returns NULL');
 
-DO $$
-DECLARE r record; v_id uuid;
-BEGIN
-  PERFORM set_config(
-    'request.jwt.claims',
-    '{"sub":"99999999-9999-9999-9999-999999999991","role":"authenticated"}',
-    true
-  );
-  SET LOCAL ROLE authenticated;
+-- ── Tests 21-22: mark_ticket_done / mark_ticket_no_show ──
 
-  -- Find the ticket that was 'called' in Test 12
-  SELECT id INTO v_id FROM queue_tickets
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
+CREATE TEMP TABLE t_done_id ON COMMIT DROP AS
+  SELECT id FROM queue_tickets
    WHERE state = 'called'
      AND department_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
    LIMIT 1;
 
-  PERFORM mark_ticket_done(v_id);
+SELECT mark_ticket_done(id) FROM t_done_id;
 
-  PERFORM ok(
-    (SELECT state = 'done' AND done_at IS NOT NULL
-            AND completed_by = '99999999-9999-9999-9999-999999999991'
-       FROM queue_tickets WHERE id = v_id),
-    'Test 16: mark_ticket_done sets state=done, done_at, completed_by'
-  );
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
-  -- Create another verified ticket and call+no_show it
-  SET LOCAL ROLE anon;
-  PERFORM set_config('request.jwt.claims', '', true);
-  SELECT * INTO r FROM create_walkin_ticket('HA', 'cough', 'mild', '+66890000030', 'th');
-  PERFORM verify_walkin_ticket(r.ticket_id, r.otp_code);
-  RESET ROLE;
+SELECT ok(
+  (SELECT state = 'done' AND done_at IS NOT NULL
+            AND completed_by = '91919191-9191-9191-9191-919191919191'
+     FROM queue_tickets q, t_done_id WHERE q.id = t_done_id.id),
+  'Test 21: mark_ticket_done sets state=done, done_at, completed_by'
+);
 
-  PERFORM set_config(
-    'request.jwt.claims',
-    '{"sub":"99999999-9999-9999-9999-999999999991","role":"authenticated"}',
-    true
-  );
-  SET LOCAL ROLE authenticated;
-  PERFORM call_next_ticket('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+CREATE TEMP TABLE t_ns ON COMMIT DROP AS
+  SELECT * FROM create_walkin_ticket('HA', 'cough', '+66890000030', 'th');
+SELECT v.ok FROM t_ns, LATERAL verify_walkin_ticket(t_ns.ticket_id, t_ns.otp_code) v;
+GRANT SELECT ON t_ns TO authenticated;
 
-  PERFORM mark_ticket_no_show(r.ticket_id);
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
 
-  PERFORM ok(
-    (SELECT state = 'no_show' AND no_show_at IS NOT NULL
-       FROM queue_tickets WHERE id = r.ticket_id),
-    'Test 17: mark_ticket_no_show sets state=no_show and no_show_at'
-  );
+SELECT triage_walkin_ticket(ticket_id, 'mild') FROM t_ns;
+SELECT call_next_ticket('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+SELECT mark_ticket_no_show(ticket_id) FROM t_ns;
 
-  RESET ROLE;
-  PERFORM set_config('request.jwt.claims', '', true);
-END $$;
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true);
 
--- Test 18: queue_ticket_events captured at least one row per RPC
+SELECT ok(
+  (SELECT state = 'no_show' AND no_show_at IS NOT NULL
+     FROM queue_tickets q, t_ns WHERE q.id = t_ns.ticket_id),
+  'Test 22: mark_ticket_no_show sets state=no_show and no_show_at'
+);
+
+-- ── Tests 23-24: audit trail ──
+
+SELECT cmp_ok(
+  (SELECT COUNT(*) FROM queue_ticket_events WHERE to_state = 'waiting')::int,
+  '>=',
+  2,
+  'Test 23: triage events emit pending_triage → waiting audit rows'
+);
+
 SELECT cmp_ok(
   (SELECT COUNT(*) FROM queue_ticket_events)::int,
   '>=',
-  5,
-  'Test 18: queue_ticket_events records audit rows for state changes'
+  6,
+  'Test 24: queue_ticket_events records audit rows for state changes'
 );
 
 SELECT * FROM finish();

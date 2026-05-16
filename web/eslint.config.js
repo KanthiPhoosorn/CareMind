@@ -1,15 +1,12 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import { fileURLToPath } from 'url';
-import path from 'path';
+// ESLint 9 flat config for the web package.
+// Uses eslint-config-next/core-web-vitals which already ships as a flat-config
+// array — no FlatCompat shim needed. The FlatCompat path tripped over a
+// circular-reference in the next plugin export under ESLint 9.39.
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({ baseDirectory: __dirname });
-
-export default [
-  ...compat.extends('next/core-web-vitals'),
-  {
-    ignores: ['.next/**', 'node_modules/**'],
-  },
+const config = [
+  { ignores: ['.next/**', 'node_modules/**', '*.tsbuildinfo'] },
+  ...nextCoreWebVitals,
 ];
+
+export default config;

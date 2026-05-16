@@ -69,9 +69,20 @@ CREATE INDEX idx_queue_active
   WHERE state IN ('waiting', 'called');
 
 -- Human-friendly ticket numbers are unique per (hospital, dept, calendar day).
--- Functional expression requires a unique INDEX, not a UNIQUE table constraint.
+-- Postgres ≥15 rejects (created_at::date) inside a unique index because the
+-- cast depends on session TimeZone and is therefore not IMMUTABLE. The
+-- IMMUTABLE wrapper below pins the day boundary to Asia/Bangkok (all current
+-- tenants are Thai). When we add a hospital.timezone column we'll replace
+-- the literal and downgrade the marker to STABLE.
+CREATE OR REPLACE FUNCTION ticket_day(ts TIMESTAMPTZ)
+RETURNS DATE
+LANGUAGE SQL
+IMMUTABLE
+PARALLEL SAFE
+AS $$ SELECT (ts AT TIME ZONE 'Asia/Bangkok')::date $$;
+
 CREATE UNIQUE INDEX idx_queue_tickets_daily_number
-  ON queue_tickets(hospital_id, department_id, ticket_number, (created_at::date));
+  ON queue_tickets(hospital_id, department_id, ticket_number, ticket_day(created_at));
 
 -- ── 4. queue_ticket_events (audit) ──
 CREATE TABLE queue_ticket_events (

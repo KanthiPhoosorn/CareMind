@@ -4,9 +4,21 @@
 
 @import './tokens.css';
 
+/* Font CSS variables. The actual @font-face rules come from the Google
+   Fonts <link> in app/layout.tsx — these vars just wire the family name
+   into the var(--font-ui) / var(--font-mono) tokens the codebase uses. */
+:root {
+  --font-ui: 'IBM Plex Sans Thai Looped';
+  --font-mono: 'IBM Plex Mono';
+}
+
 html,
 body {
-  font-family: var(--font-ui), system-ui, -apple-system, sans-serif;
+  font-family:
+    var(--font-ui),
+    system-ui,
+    -apple-system,
+    sans-serif;
   color: var(--fg1);
   background: var(--bg-app);
   font-size: var(--t-body);

@@ -26,9 +26,9 @@ INSERT INTO medications (patient_id, timestamp, order_id, medication_name, dosag
 ('00000000-0000-0000-0000-000000000011', '2026-02-14T09:35:00Z', 'RX-2024-002', 'Guaifenesin', '400mg', 'Oral', 'Every 4 hours as needed', '7 days', '30', 'Dr. Sarah Johnson', 'Cough with mucus', 'Take with full glass of water. May cause drowsiness.', 'Active', '2026-02-14', '2026-02-21'),
 ('00000000-0000-0000-0000-000000000012', '2026-02-14T10:50:00Z', 'RX-2024-003', 'Metoprolol', '25mg', 'Oral', 'Twice daily', 'Ongoing', '60', 'Dr. Michael Chen', 'Atrial fibrillation - rate control', 'Take with or without food. Do not stop abruptly. Monitor heart rate.', 'Active', '2026-02-14', NULL),
 ('00000000-0000-0000-0000-000000000012', '2026-02-15T09:20:00Z', 'RX-2024-004', 'Apixaban', '5mg', 'Oral', 'Twice daily', 'Ongoing', '60', 'Dr. Michael Chen', 'Atrial fibrillation - anticoagulation', 'Take at same times daily. Avoid NSAIDs. Report any bleeding.', 'Active', '2026-02-15', NULL),
-('00000000-0000-0000-0000-000000000012', '2026-02-15T09:20:00Z', 'RX-2024-005', 'Metoprolol', '50mg', 'Oral', 'Twice daily', 'Ongoing', '60', 'Dr. Michael Chen', 'Atrial fibrillation - rate control', 'Dose increased from 25mg. Take with or without food.', 'Active - Dose Increased', '2026-02-15', NULL),
+('00000000-0000-0000-0000-000000000012', '2026-02-15T09:20:00Z', 'RX-2024-005', 'Metoprolol', '50mg', 'Oral', 'Twice daily', 'Ongoing', '60', 'Dr. Michael Chen', 'Atrial fibrillation - rate control', 'Dose increased from 25mg. Take with or without food.', 'Active', '2026-02-15', NULL),
 ('00000000-0000-0000-0000-000000000013', '2026-02-13T15:35:00Z', 'RX-2024-006', 'Ondansetron', '4mg', 'Oral disintegrating tablet', 'Every 8 hours as needed', '5 days', '12', 'Dr. Emily Rodriguez', 'Nausea and vomiting', 'Place on tongue, allow to dissolve. No water needed.', 'Active', '2026-02-13', '2026-02-18'),
-('00000000-0000-0000-0000-000000000011', '2026-02-12T08:00:00Z', 'RX-2024-007', 'Lisinopril', '10mg', 'Oral', 'Once daily', 'Ongoing', '90', 'Dr. Sarah Johnson', 'Hypertension', 'Take in morning. Monitor blood pressure regularly.', 'Active - Maintenance', '2025-11-01', NULL) ON CONFLICT DO NOTHING;
+('00000000-0000-0000-0000-000000000011', '2026-02-12T08:00:00Z', 'RX-2024-007', 'Lisinopril', '10mg', 'Oral', 'Once daily', 'Ongoing', '90', 'Dr. Sarah Johnson', 'Hypertension', 'Take in morning. Monitor blood pressure regularly.', 'Active', '2025-11-01', NULL) ON CONFLICT DO NOTHING;
 
 -- Lab Results
 INSERT INTO lab_results (patient_id, timestamp, order_id, test_name, status, collected_by, ordered_by, results, interpretation) VALUES 
@@ -80,8 +80,57 @@ INSERT INTO departments (id, hospital_id, code, name_th, name_en, no_show_second
   ('aaaa0000-0000-0000-0000-000000000006',
    '00000000-0000-0000-0000-000000000001', 'ORTHO',  'กระดูก',      'Orthopedics',       300),
   ('aaaa0000-0000-0000-0000-000000000007',
-   '00000000-0000-0000-0000-000000000001', 'ER',     'ฉุกเฉิน',     'Emergency',         120)
+   '00000000-0000-0000-0000-000000000001', 'ER',     'ฉุกเฉิน',     'Emergency',         120),
+  ('aaaa0000-0000-0000-0000-000000000008',
+   '00000000-0000-0000-0000-000000000001', 'TRIAGE', 'จุดคัดกรอง',  'Triage',            600)
 ON CONFLICT DO NOTHING;
+
+-- =====================================================================
+-- Demo staff user for /login dev sign-in (Phase A of walk-in queue plan).
+-- Email:    staff@demo.caremind.local
+-- Password: caremind-dev
+-- pgcrypto is enabled via the `extensions` schema in migration 00006,
+-- so crypt()/gen_salt() are qualified explicitly.
+-- =====================================================================
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, recovery_sent_at, last_sign_in_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, email_change, email_change_token_new, recovery_token
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  '99999999-9999-9999-9999-999999999991',
+  'authenticated',
+  'authenticated',
+  'staff@demo.caremind.local',
+  extensions.crypt('caremind-dev', extensions.gen_salt('bf')),
+  NOW(), NOW(), NOW(),
+  '{"provider":"email","providers":["email"]}',
+  '{}',
+  NOW(), NOW(),
+  '', '', '', ''
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, provider_id, user_id, identity_data, provider,
+  last_sign_in_at, created_at, updated_at
+) VALUES (
+  '99999999-9999-9999-9999-999999999992',
+  '99999999-9999-9999-9999-999999999991',
+  '99999999-9999-9999-9999-999999999991',
+  '{"sub":"99999999-9999-9999-9999-999999999991","email":"staff@demo.caremind.local","email_verified":true}',
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO profiles (id, email, full_name, role, hospital_id)
+VALUES (
+  '99999999-9999-9999-9999-999999999991',
+  'staff@demo.caremind.local',
+  'Demo Staff',
+  'doctor',
+  '00000000-0000-0000-0000-000000000001'
+) ON CONFLICT (id) DO NOTHING;
 
 -- Routing rules: (symptom_code, severity → department). NULL severity = any.
 -- `priority` ASC = first match wins.

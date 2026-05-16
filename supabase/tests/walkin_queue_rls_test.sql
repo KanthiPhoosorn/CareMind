@@ -20,7 +20,7 @@ INSERT INTO auth.users (
   encrypted_password, email_confirmed_at, created_at, updated_at,
   raw_app_meta_data, raw_user_meta_data
 ) VALUES (
-  '99999999-9999-9999-9999-999999999991',
+  '91919191-9191-9191-9191-919191919191',
   '00000000-0000-0000-0000-000000000000',
   'authenticated',
   'authenticated',
@@ -32,7 +32,7 @@ INSERT INTO auth.users (
 
 INSERT INTO profiles (id, hospital_id, email, full_name, role)
   VALUES (
-    '99999999-9999-9999-9999-999999999991',
+    '91919191-9191-9191-9191-919191919191',
     '11111111-1111-1111-1111-111111111111',
     'staff-a@example.test',
     'Staff A',
@@ -97,7 +97,7 @@ RESET ROLE;
 -- ── Test 4-6: staff in hospital A sees only hospital A ──
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"99999999-9999-9999-9999-999999999991","role":"authenticated"}',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
   true
 );
 SET LOCAL ROLE authenticated;
@@ -142,7 +142,7 @@ INSERT INTO routing_rules (
 
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"99999999-9999-9999-9999-999999999991","role":"authenticated"}',
+  '{"sub":"91919191-9191-9191-9191-919191919191","role":"authenticated"}',
   true
 );
 SET LOCAL ROLE authenticated;
